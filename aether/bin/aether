@@ -1,0 +1,282 @@
+#!/usr/bin/env bash
+# AetherOS system CLI — `aether <command>`
+# Install: sudo install -m 755 aether /usr/local/bin/aether
+set -euo pipefail
+
+VERSION="0.1.0"
+
+c_cyan="\033[36m"; c_reset="\033[0m"; c_bold="\033[1m"; c_green="\033[32m"; c_red="\033[31m"
+
+usage() {
+  cat <<EOF
+${c_bold}aether${c_reset} — AetherOS system tool (v${VERSION})
+
+Usage: aether <command>
+
+  firstboot   Run initial post-install configuration and system check
+  settings    Launch the AetherOS Control Center GUI
+  update      Update system + flatpaks (dnf5 + flatpak)
+  clean       Clean package caches and old kernels
+  info        Show system info (like fastfetch, AetherOS-branded)
+  doctor      Run basic health checks
+  drivers     Show which GPU driver is active
+  snapshot    save|restore a Btrfs root snapshot
+  config      Configure AetherOS settings (e.g. AI API keys)
+  ai <prompt> Ask the configured AI provider a question
+EOF
+}
+
+cmd_update() {
+  echo -e "${c_cyan}==>${c_reset} Updating system packages (dnf5)..."
+  sudo dnf5 upgrade --refresh -y
+  if command -v flatpak >/dev/null; then
+    echo -e "${c_cyan}==>${c_reset} Updating Flatpaks..."
+    flatpak update -y
+  fi
+}
+
+cmd_clean() {
+  echo -e "${c_cyan}==>${c_reset} Cleaning dnf cache..."
+  sudo dnf5 clean all
+  echo -e "${c_cyan}==>${c_reset} Removing old kernels (keeping 2 most recent)..."
+  sudo dnf5 remove --oldinstallonly --setopt installonly_limit=2 kernel -y || true
+}
+
+cmd_info() {
+  local os kernel shell hyprv uptime mem
+  os=$(grep '^PRETTY_NAME=' /etc/os-release 2>/dev/null | cut -d'"' -f2 || echo "AetherOS")
+  kernel=$(uname -r)
+  shell=$(basename "${SHELL:-unknown}")
+  hyprv=$(hyprctl version 2>/dev/null | head -n1 || echo "not running")
+  uptime=$(uptime -p 2>/dev/null || echo "unknown")
+  mem=$(free -h 2>/dev/null | awk '/^Mem:/{print $3"/"$2}')
+  echo -e "${c_bold}${c_cyan}AetherOS${c_reset}"
+  printf "%-10s %s\n" "OS:" "$os"
+  printf "%-10s %s\n" "Kernel:" "$kernel"
+  printf "%-10s %s\n" "Hyprland:" "$hyprv"
+  printf "%-10s %s\n" "Shell:" "$shell"
+  printf "%-10s %s\n" "Uptime:" "$uptime"
+  printf "%-10s %s\n" "Memory:" "$mem"
+}
+
+cmd_doctor() {
+  local ok=0
+  echo -e "${c_cyan}==>${c_reset} Running AetherOS health checks..."
+
+  if command -v systemctl >/dev/null 2>&1; then
+    systemctl is-active --quiet sddm && echo "[OK]   sddm running" || { echo "[FAIL] sddm not running"; ok=1; }
+    systemctl is-active --quiet NetworkManager && echo "[OK]   NetworkManager running" || { echo "[FAIL] NetworkManager not running"; ok=1; }
+    systemctl is-active --quiet firewalld && echo "[OK]   firewalld running" || { echo "[WARN] firewalld not running"; }
+  else
+    echo "[WARN] systemctl not available"
+  fi
+
+  getenforce 2>/dev/null | grep -qi enforcing && echo "[OK]   SELinux enforcing" || echo "[WARN] SELinux not enforcing"
+
+  df -h / | awk 'NR==2{gsub("%","",$5); if ($5+0 > 90) print "[WARN] root filesystem "$5"% full"; else print "[OK]   root filesystem "$5"% used"}'
+
+  if [[ $ok -eq 0 ]]; then
+    echo -e "${c_cyan}All critical checks passed.${c_reset}"
+  else
+    echo -e "\033[31mSome checks failed — see [FAIL] lines above.\033[0m"
+  fi
+}
+
+cmd_drivers() {
+  echo -e "${c_cyan}==>${c_reset} GPU driver status:"
+  if command -v lspci >/dev/null; then
+    lspci -k | grep -A2 -E "VGA|3D controller"
+  else
+    echo "lspci not found (install pciutils)"
+  fi
+  echo
+  lsmod | grep -E "^nvidia|^amdgpu|^i915" || echo "No discrete GPU kernel module currently loaded."
+}
+
+cmd_snapshot() {
+  local action="${1:-}"
+  case "$action" in
+    save)
+      local name="aetheros-$(date +%Y%m%d-%H%M%S)"
+      echo -e "${c_cyan}==>${c_reset} Creating Btrfs snapshot: $name"
+      sudo btrfs subvolume snapshot -r / "/.snapshots/$name"
+      ;;
+    restore)
+      echo "Available snapshots:"
+      sudo btrfs subvolume list / | grep '.snapshots' || echo "(none found)"
+      echo "Restore requires booting from a live/rescue environment; this lists snapshots only for now."
+      ;;
+    *)
+      echo "Usage: aether snapshot save|restore" ;;
+  esac
+}
+
+cmd_settings() {
+  if command -v aether-settings >/dev/null 2>&1; then
+    aether-settings "$@"
+  elif [[ -f "$(dirname "$0")/../settings/aether-settings" ]]; then
+    python3 "$(dirname "$0")/../settings/aether-settings" "$@"
+  else
+    cmd_config "$@"
+  fi
+}
+
+cmd_config() {
+  local cfg_dir="${HOME}/.config/aether"
+  local cfg_file="${cfg_dir}/config"
+  mkdir -p "$cfg_dir"
+
+  if [[ $# -eq 0 ]]; then
+    echo -e "${c_bold}AetherOS Configuration${c_reset}"
+    if [[ -f "$cfg_file" ]]; then
+      cat "$cfg_file"
+    else
+      echo "No configuration file found at $cfg_file."
+      echo "To configure API key:"
+      echo "  aether config set AETHER_API_KEY \"your-key\""
+    fi
+    return 0
+  fi
+
+  local action="${1:-}"; shift || true
+  case "$action" in
+    set)
+      local key="${1:-}"
+      local val="${2:-}"
+      if [[ -z "$key" || -z "$val" ]]; then
+        echo "Usage: aether config set <KEY> <VALUE>"
+        return 1
+      fi
+      touch "$cfg_file"
+      if grep -q "^export ${key}=" "$cfg_file" 2>/dev/null; then
+        sed -i "s|^export ${key}=.*|export ${key}=\"${val}\"|" "$cfg_file"
+      else
+        echo "export ${key}=\"${val}\"" >> "$cfg_file"
+      fi
+      echo -e "${c_green}[✓] Updated ${key} in ${cfg_file}${c_reset}"
+      ;;
+    *)
+      echo "Usage: aether config [set <KEY> <VALUE>]"
+      ;;
+  esac
+}
+
+cmd_ai() {
+  # Load configuration file if present
+  if [[ -f "${HOME}/.config/aether/config" ]]; then
+    # shellcheck source=/dev/null
+    source "${HOME}/.config/aether/config"
+  fi
+
+  local api_key="${AETHER_API_KEY:-${AETHER_AI_API_KEY:-}}"
+
+  if [[ -z "$api_key" ]]; then
+    cat <<EOF
+Aether AI
+
+No API key configured.
+
+Set:
+export AETHER_API_KEY="your-key"
+
+or configure it with:
+aether config
+EOF
+    return 1
+  fi
+
+  local prompt="$*"
+  if [[ -z "$prompt" ]]; then
+    echo "Usage: aether ai \"your question\""; return 1
+  fi
+
+  case "${AETHER_AI_PROVIDER:-anthropic}" in
+    anthropic)
+      curl -s https://api.anthropic.com/v1/messages \
+        -H "x-api-key: $api_key" \
+        -H "anthropic-version: 2023-06-01" \
+        -H "content-type: application/json" \
+        -d "$(jq -n --arg p "$prompt" '{model:"claude-sonnet-4-6",max_tokens:1024,messages:[{role:"user",content:$p}]}')" \
+        | jq -r '.content[0].text'
+      ;;
+    openai)
+      curl -s https://api.openai.com/v1/chat/completions \
+        -H "Authorization: Bearer $api_key" \
+        -H "content-type: application/json" \
+        -d "$(jq -n --arg p "$prompt" '{model:"gpt-4o-mini",messages:[{role:"user",content:$p}]}')" \
+        | jq -r '.choices[0].message.content'
+      ;;
+    *)
+      echo "Unknown AETHER_AI_PROVIDER: ${AETHER_AI_PROVIDER}"; return 1 ;;
+  esac
+}
+
+cmd_firstboot() {
+  echo -e "${c_cyan}==>${c_reset} Running AetherOS first-boot setup..."
+
+  # Create default user directories if missing
+  mkdir -p ~/.config/hypr ~/.config/waybar/scripts ~/.config/kitty
+
+  # Copy missing default configs from /etc/skel if present
+  if [[ -d /etc/skel/.config ]]; then
+    cp -rn /etc/skel/.config/* ~/.config/ 2>/dev/null || true
+    chmod +x ~/.config/waybar/scripts/*.sh 2>/dev/null || true
+  fi
+
+  local check_hypr="[✓] Hyprland"
+  local check_waybar="[✓] Waybar"
+  local check_kitty="[✓] Kitty"
+  local check_net="[✓] Network"
+  local check_audio="[✓] Audio"
+  local check_gpu="[✓] GPU"
+
+  command -v hyprctl >/dev/null 2>&1 || check_hypr="[!] Hyprland (not active/installed)"
+  command -v waybar >/dev/null 2>&1 || check_waybar="[!] Waybar (not installed)"
+  command -v kitty >/dev/null 2>&1 || check_kitty="[!] Kitty (not installed)"
+  
+  if ! (systemctl is-active --quiet NetworkManager 2>/dev/null || ping -c 1 8.8.8.8 >/dev/null 2>&1); then
+    check_net="[!] Network (offline)"
+  fi
+
+  if ! (pgrep -x pipewire >/dev/null 2>&1 || command -v wpctl >/dev/null 2>&1); then
+    check_audio="[!] Audio (pipewire inactive)"
+  fi
+
+  if ! (command -v nvidia-smi >/dev/null 2>&1 || command -v lspci >/dev/null 2>&1); then
+    check_gpu="[!] GPU (driver info missing)"
+  fi
+
+  cat <<EOF
+
+Welcome to AetherOS
+
+${check_hypr}
+${check_waybar}
+${check_kitty}
+${check_net}
+${check_audio}
+${check_gpu}
+
+AetherOS is ready.
+EOF
+}
+
+main() {
+  local cmd="${1:-}"; shift || true
+  case "$cmd" in
+    firstboot) cmd_firstboot ;;
+    settings)  cmd_settings "$@" ;;
+    update)    cmd_update ;;
+    clean)     cmd_clean ;;
+    info)      cmd_info ;;
+    doctor)    cmd_doctor ;;
+    drivers)   cmd_drivers ;;
+    snapshot)  cmd_snapshot "$@" ;;
+    config)    cmd_config "$@" ;;
+    ai)        cmd_ai "$@" ;;
+    -h|--help|help|"") usage ;;
+    *) echo "Unknown command: $cmd"; usage; exit 1 ;;
+  esac
+}
+
+main "$@"

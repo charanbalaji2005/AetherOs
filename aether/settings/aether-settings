@@ -1,0 +1,253 @@
+#!/usr/bin/env python3
+"""
+AetherOS Settings Application
+A modern glassmorphic control center for AetherOS.
+"""
+
+import sys
+import os
+import subprocess
+import json
+import tkinter as tk
+from tkinter import ttk, messagebox, filedialog
+
+# Color Palette matching AetherOS Kitty / Waybar / Hyprland theme
+BG_DARK = "#0d1117"
+SIDEBAR_BG = "#161b22"
+CARD_BG = "#21262d"
+CYAN_ACCENT = "#56d4dd"
+TEXT_COLOR = "#e6f1f5"
+TEXT_MUTED = "#8b949e"
+BORDER_COLOR = "#30363d"
+SUCCESS_COLOR = "#57e389"
+WARN_COLOR = "#f5d76e"
+
+CONFIG_DIR = os.path.expanduser("~/.config/aether")
+CONFIG_FILE = os.path.join(CONFIG_DIR, "config")
+
+def get_aether_config():
+    config = {}
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("export "):
+                    line = line[7:]
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    config[k.strip()] = v.strip().strip('"').strip("'")
+    return config
+
+def save_aether_config(key, val):
+    os.makedirs(CONFIG_DIR, exist_ok=True)
+    config = get_aether_config()
+    config[key] = val
+    with open(CONFIG_FILE, "w") as f:
+        for k, v in config.items():
+            f.write(f'export {k}="{v}"\n')
+
+class AetherSettingsApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("AetherOS Settings")
+        self.geometry("860x560")
+        self.configure(bg=BG_DARK)
+
+        # Style configuration
+        self.style = ttk.Style(self)
+        self.style.theme_use("clam")
+        
+        # Configure global styles
+        self.style.configure(".", background=BG_DARK, foreground=TEXT_COLOR, font=("Segoe UI", 10))
+        self.style.configure("TLabel", background=CARD_BG, foreground=TEXT_COLOR)
+        self.style.configure("Header.TLabel", background=CARD_BG, foreground=CYAN_ACCENT, font=("Segoe UI", 14, "bold"))
+        self.style.configure("Title.TLabel", background=BG_DARK, foreground=CYAN_ACCENT, font=("Segoe UI", 18, "bold"))
+        self.style.configure("TButton", background=CARD_BG, foreground=CYAN_ACCENT, borderwidth=1, focuscolor=CYAN_ACCENT)
+        self.style.map("TButton", background=[("active", BORDER_COLOR)])
+
+        self.create_layout()
+
+    def create_layout(self):
+        # Header Bar
+        header_frame = tk.Frame(self, bg=BG_DARK, height=50)
+        header_frame.pack(side="top", fill="x", padx=20, pady=10)
+        
+        lbl_title = tk.Label(header_frame, text="󰢻  AetherOS Settings", font=("Segoe UI", 16, "bold"), bg=BG_DARK, fg=CYAN_ACCENT)
+        lbl_title.pack(side="left")
+
+        lbl_ver = tk.Label(header_frame, text="v1.0 (Hyprland Glass Edition)", font=("Segoe UI", 9), bg=BG_DARK, fg=TEXT_MUTED)
+        lbl_ver.pack(side="right", pady=5)
+
+        # Main Container
+        main_container = tk.Frame(self, bg=BG_DARK)
+        main_container.pack(fill="both", expand=True, padx=15, pady=(0, 15))
+
+        # Sidebar
+        sidebar = tk.Frame(main_container, bg=SIDEBAR_BG, width=200)
+        sidebar.pack(side="left", fill="y", padx=(0, 10))
+
+        # Content Area
+        self.content_area = tk.Frame(main_container, bg=BG_DARK)
+        self.content_area.pack(side="right", fill="both", expand=True)
+
+        # Tabs setup
+        self.tabs = [
+            ("🎨  Appearance", self.show_appearance_tab),
+            ("🖥️  Display", self.show_display_tab),
+            ("󰤨  Network", self.show_network_tab),
+            ("🔊  Audio", self.show_audio_tab),
+            ("󰧑  AI Config", self.show_ai_tab),
+            ("⚙️  System & About", self.show_system_tab),
+        ]
+
+        self.tab_buttons = []
+        for idx, (name, cmd) in enumerate(self.tabs):
+            btn = tk.Button(
+                sidebar,
+                text=name,
+                font=("Segoe UI", 10),
+                bg=SIDEBAR_BG,
+                fg=TEXT_COLOR,
+                activebackground=BORDER_COLOR,
+                activeforeground=CYAN_ACCENT,
+                bd=0,
+                anchor="w",
+                padx=15,
+                pady=10,
+                command=lambda c=cmd, i=idx: self.select_tab(i, c)
+            )
+            btn.pack(fill="x", pady=2)
+            self.tab_buttons.append(btn)
+
+        self.select_tab(0, self.show_appearance_tab)
+
+    def select_tab(self, idx, tab_func):
+        for i, btn in enumerate(self.tab_buttons):
+            if i == idx:
+                btn.configure(bg=CARD_BG, fg=CYAN_ACCENT, font=("Segoe UI", 10, "bold"))
+            else:
+                btn.configure(bg=SIDEBAR_BG, fg=TEXT_COLOR, font=("Segoe UI", 10))
+
+        # Clear content area
+        for widget in self.content_area.winfo_children():
+            widget.destroy()
+
+        tab_func()
+
+    def create_card(self, title):
+        card = tk.Frame(self.content_area, bg=CARD_BG, highlightbackground=BORDER_COLOR, highlightthickness=1, padx=15, pady=15)
+        card.pack(fill="x", pady=8)
+        lbl = tk.Label(card, text=title, font=("Segoe UI", 12, "bold"), bg=CARD_BG, fg=CYAN_ACCENT)
+        lbl.pack(anchor="w", pady=(0, 10))
+        return card
+
+    # --- TABS IMPLEMENTATION ---
+
+    def show_appearance_tab(self):
+        card1 = self.create_card("Desktop Theme & Effects")
+        tk.Label(card1, text="System Theme: Aether Dark Glassmorphism", bg=CARD_BG, fg=TEXT_COLOR).pack(anchor="w", pady=2)
+        tk.Label(card1, text="Blur Passes: 3 | Rounding: 12px | Border Color: Cyan / Ice Blue", bg=CARD_BG, fg=TEXT_MUTED).pack(anchor="w", pady=2)
+
+        card2 = self.create_card("Wallpaper Background")
+        bg_path = "/usr/share/backgrounds/aetheros/default.png"
+        tk.Label(card2, text=f"Current Wallpaper: {bg_path}", bg=CARD_BG, fg=TEXT_COLOR).pack(anchor="w", pady=4)
+        
+        btn_frame = tk.Frame(card2, bg=CARD_BG)
+        btn_frame.pack(anchor="w", pady=5)
+        
+        def change_wallpaper():
+            filename = filedialog.askopenfilename(title="Select Wallpaper", filetypes=[("Image Files", "*.png *.jpg *.jpeg")])
+            if filename:
+                subprocess.run(["swaybg", "-i", filename, "-m", "fill"], check=False)
+                messagebox.showinfo("AetherOS", f"Applied new wallpaper: {os.path.basename(filename)}")
+
+        tk.Button(btn_frame, text="Browse New Wallpaper...", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=10, pady=5, command=change_wallpaper).pack(side="left", padx=5)
+
+    def show_display_tab(self):
+        card1 = self.create_card("Monitor Resolution & Layout")
+        tk.Label(card1, text="Auto-Detection: Active (monitors.conf)", bg=CARD_BG, fg=TEXT_COLOR).pack(anchor="w", pady=2)
+        tk.Label(card1, text="Default Rule: monitor=,preferred,auto,1", bg=CARD_BG, fg=TEXT_MUTED).pack(anchor="w", pady=2)
+
+        card2 = self.create_card("Display Scaling & Options")
+        scale_var = tk.StringVar(value="1.0")
+        
+        scale_frame = tk.Frame(card2, bg=CARD_BG)
+        scale_frame.pack(anchor="w", pady=5)
+        tk.Label(scale_frame, text="Scale Factor:", bg=CARD_BG, fg=TEXT_COLOR).pack(side="left", padx=(0, 10))
+        for val in ["1.0", "1.25", "1.5", "2.0"]:
+            tk.Radiobutton(scale_frame, text=val, value=val, variable=scale_var, bg=CARD_BG, fg=TEXT_COLOR, selectcolor=CARD_BG, activebackground=CARD_BG).pack(side="left", padx=5)
+
+    def show_network_tab(self):
+        card = self.create_card("Network & Connectivity")
+        tk.Label(card, text="Service: NetworkManager", bg=CARD_BG, fg=TEXT_COLOR).pack(anchor="w", pady=2)
+        
+        def open_nm():
+            subprocess.Popen(["nm-connection-editor"])
+
+        btn_frame = tk.Frame(card, bg=CARD_BG)
+        btn_frame.pack(anchor="w", pady=10)
+        tk.Button(btn_frame, text="Open Network Connections Manager", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=12, pady=6, command=open_nm).pack(side="left")
+
+    def show_audio_tab(self):
+        card = self.create_card("Audio & Sound System")
+        tk.Label(card, text="Backend: PipeWire + WirePlumber", bg=CARD_BG, fg=TEXT_COLOR).pack(anchor="w", pady=2)
+
+        def open_pavucontrol():
+            subprocess.Popen(["pavucontrol"])
+
+        btn_frame = tk.Frame(card, bg=CARD_BG)
+        btn_frame.pack(anchor="w", pady=10)
+        tk.Button(btn_frame, text="Open Volume Control (Pavucontrol)", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=12, pady=6, command=open_pavucontrol).pack(side="left")
+
+    def show_ai_tab(self):
+        card = self.create_card("Aether AI Configuration")
+        
+        config = get_aether_config()
+        current_key = config.get("AETHER_API_KEY", config.get("AETHER_AI_API_KEY", ""))
+        current_provider = config.get("AETHER_AI_PROVIDER", "anthropic")
+
+        tk.Label(card, text="AI Provider:", bg=CARD_BG, fg=TEXT_COLOR).pack(anchor="w", pady=(0, 2))
+        provider_var = tk.StringVar(value=current_provider)
+        provider_combo = ttk.Combobox(card, textvariable=provider_var, values=["anthropic", "openai"], state="readonly")
+        provider_combo.pack(anchor="w", pady=(0, 10))
+
+        tk.Label(card, text="API Key:", bg=CARD_BG, fg=TEXT_COLOR).pack(anchor="w", pady=(0, 2))
+        key_var = tk.StringVar(value=current_key)
+        key_entry = tk.Entry(card, textvariable=key_var, width=50, bg=BG_DARK, fg=CYAN_ACCENT, insertbackground=CYAN_ACCENT, show="*")
+        key_entry.pack(anchor="w", pady=(0, 10))
+
+        show_var = tk.BooleanVar(value=False)
+        def toggle_show():
+            key_entry.configure(show="" if show_var.get() else "*")
+        
+        tk.Checkbutton(card, text="Show API Key", variable=show_var, command=toggle_show, bg=CARD_BG, fg=TEXT_MUTED, selectcolor=CARD_BG, activebackground=CARD_BG).pack(anchor="w", pady=(0, 10))
+
+        def save_ai_config():
+            key = key_var.get().strip()
+            prov = provider_var.get()
+            save_aether_config("AETHER_API_KEY", key)
+            save_aether_config("AETHER_AI_PROVIDER", prov)
+            messagebox.showinfo("AetherOS AI", "AI configuration updated successfully!")
+
+        btn_save = tk.Button(card, text="Save AI Configuration", bg=CYAN_ACCENT, fg=BG_DARK, font=("Segoe UI", 10, "bold"), bd=0, padx=15, pady=6, command=save_ai_config)
+        btn_save.pack(anchor="w", pady=5)
+
+    def show_system_tab(self):
+        card1 = self.create_card("System Health & Diagnostic Tools")
+        btn_frame = tk.Frame(card1, bg=CARD_BG)
+        btn_frame.pack(anchor="w", pady=5)
+
+        def run_cmd_in_kitty(cmd):
+            subprocess.Popen(["kitty", "-e", "bash", "-c", f"{cmd}; read -p 'Press enter to exit...'"])
+
+        tk.Button(btn_frame, text="Run Health Check (Doctor)", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=10, pady=5, command=lambda: run_cmd_in_kitty("aether doctor")).pack(side="left", padx=5)
+        tk.Button(btn_frame, text="Check GPU Drivers", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=10, pady=5, command=lambda: run_cmd_in_kitty("aether drivers")).pack(side="left", padx=5)
+        tk.Button(btn_frame, text="Update System", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=10, pady=5, command=lambda: run_cmd_in_kitty("aether update")).pack(side="left", padx=5)
+
+        card2 = self.create_card("About AetherOS")
+        tk.Label(card2, text="AetherOS 1.0 — Fedora-based Hyprland OS", font=("Segoe UI", 11, "bold"), bg=CARD_BG, fg=TEXT_COLOR).pack(anchor="w")
+        tk.Label(card2, text="Designed for fast performance, AI integration, and sleek aesthetics.", bg=CARD_BG, fg=TEXT_MUTED).pack(anchor="w", pady=2)
+
+if __name__ == "__main__":
+    app = AetherSettingsApp()
+    app.mainloop()

@@ -1,0 +1,83 @@
+/* AetherOS Waybar theme — matches kitty.conf / hyprland.conf palette */
+
+* {
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 13px;
+    min-height: 0;
+}
+
+window#waybar {
+    background: rgba(13, 17, 23, 0.72);
+    border-radius: 14px;
+    border: 1px solid rgba(86, 212, 221, 0.25);
+    color: #e6f1f5;
+}
+
+#workspaces {
+    background: transparent;
+    margin: 4px 6px;
+}
+
+#workspaces button {
+    padding: 0 8px;
+    color: #4c5561;
+    border-radius: 8px;
+}
+
+#workspaces button.active {
+    color: #56d4dd;
+    background: rgba(86, 212, 221, 0.15);
+}
+
+#workspaces button:hover {
+    background: rgba(86, 212, 221, 0.10);
+}
+
+#window {
+    color: #8be9fd;
+    padding: 0 10px;
+}
+
+#clock,
+#cpu,
+#memory,
+#custom-gpu,
+#battery,
+#network,
+#bluetooth,
+#pulseaudio,
+#custom-notifications,
+#custom-quicksettings,
+#custom-ai,
+#tray {
+    padding: 0 10px;
+    margin: 4px 2px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+#custom-ai {
+    background: rgba(86, 212, 221, 0.18);
+    color: #56d4dd;
+    font-weight: bold;
+}
+
+#custom-ai:hover {
+    background: rgba(86, 212, 221, 0.30);
+}
+
+#battery.warning {
+    color: #f5d76e;
+}
+
+#battery.critical {
+    color: #ff6b6b;
+}
+
+#custom-notifications.has-notifications {
+    color: #56d4dd;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
