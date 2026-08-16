@@ -42,9 +42,7 @@ services --enabled=sddm,NetworkManager,systemd-resolved,firewalld,bluetooth,powe
 
 # --- Core system & tools ---
 kernel
-dracut
 dracut-live
-dracut-network
 dracut-config-generic
 grub2-efi-x64
 shim-x64
@@ -96,8 +94,8 @@ mesa-dri-drivers
 mesa-vulkan-drivers
 xorg-x11-drv-amdgpu
 xorg-x11-drv-intel
-# akmod-nvidia
-# xorg-x11-drv-nvidia-cuda
+akmod-nvidia
+xorg-x11-drv-nvidia-cuda
 vulkan-loader
 
 # --- Dev tools ---
@@ -131,7 +129,7 @@ gimp
 %post --nochroot --log=/tmp/aetheros-copy.log
 set -eux
 
-SOURCE="__AETHER_SOURCE__"
+SOURCE="/mnt/c/Users/Charan Balaji/Downloads/AetherOS/AetherOS"
 TARGET="$INSTALL_ROOT"
 
 # Aether CLI
@@ -207,12 +205,6 @@ LOGO=aetheros-logo
 HOME_URL="https://example.com"
 EOF
 
-# Ensure live-image dracut support is present
-mkdir -p /etc/dracut.conf.d
-cat > /etc/dracut.conf.d/99-aetheros-live.conf <<'EOF'
-add_dracutmodules+=" dmsquash-live dm "
-EOF
-
 # Enable core system services
 systemctl enable sddm.service
 systemctl enable NetworkManager.service
@@ -241,13 +233,12 @@ Type=Application
 DesktopNames=Hyprland
 EOF
 
-# SDDM configuration - no autologin during boot debugging
+# Default sddm session -> Hyprland with autologin for development/testing
 mkdir -p /etc/sddm.conf.d
 cat > /etc/sddm.conf.d/aetheros.conf <<EOF
-[General]
-DisplayServer=wayland
-
 [Autologin]
+User=aether
+Session=hyprland
 Relogin=false
 EOF
 

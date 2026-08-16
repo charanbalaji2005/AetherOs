@@ -45,6 +45,10 @@ def save_aether_config(key, val):
     with open(CONFIG_FILE, "w") as f:
         for k, v in config.items():
             f.write(f'export {k}="{v}"\n')
+    try:
+        os.chmod(CONFIG_FILE, 0o600)
+    except Exception:
+        pass
 
 class AetherSettingsApp(tk.Tk):
     def __init__(self):
@@ -149,19 +153,31 @@ class AetherSettingsApp(tk.Tk):
         tk.Label(card1, text="Blur Passes: 3 | Rounding: 12px | Border Color: Cyan / Ice Blue", bg=CARD_BG, fg=TEXT_MUTED).pack(anchor="w", pady=2)
 
         card2 = self.create_card("Wallpaper Background")
-        bg_path = "/usr/share/backgrounds/aetheros/default.png"
-        tk.Label(card2, text=f"Current Wallpaper: {bg_path}", bg=CARD_BG, fg=TEXT_COLOR).pack(anchor="w", pady=4)
+        bg_path = "/usr/share/backgrounds/aetheros"
+        tk.Label(card2, text=f"Installed Wallpapers: {bg_path}", bg=CARD_BG, fg=TEXT_COLOR).pack(anchor="w", pady=4)
         
         btn_frame = tk.Frame(card2, bg=CARD_BG)
         btn_frame.pack(anchor="w", pady=5)
         
+        def set_wallpaper_path(path):
+            if os.path.exists(path):
+                subprocess.run(["pkill", "swaybg"], check=False)
+                subprocess.Popen(["swaybg", "-i", path, "-m", "fill"])
+                messagebox.showinfo("AetherOS", f"Applied wallpaper: {os.path.basename(path)}")
+            else:
+                messagebox.showwarning("AetherOS", f"Wallpaper not found at {path}")
+
         def change_wallpaper():
             filename = filedialog.askopenfilename(title="Select Wallpaper", filetypes=[("Image Files", "*.png *.jpg *.jpeg")])
             if filename:
-                subprocess.run(["swaybg", "-i", filename, "-m", "fill"], check=False)
-                messagebox.showinfo("AetherOS", f"Applied new wallpaper: {os.path.basename(filename)}")
+                set_wallpaper_path(filename)
 
-        tk.Button(btn_frame, text="Browse New Wallpaper...", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=10, pady=5, command=change_wallpaper).pack(side="left", padx=5)
+        tk.Button(btn_frame, text="🌌 Night Vending", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=8, pady=4,
+                  command=lambda: set_wallpaper_path("/usr/share/backgrounds/aetheros/vending_night.jpg")).pack(side="left", padx=(0, 5))
+        tk.Button(btn_frame, text="🌅 Sunset Cafe", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=8, pady=4,
+                  command=lambda: set_wallpaper_path("/usr/share/backgrounds/aetheros/makima_sunset.jpg")).pack(side="left", padx=5)
+        tk.Button(btn_frame, text="Browse Custom...", bg=BORDER_COLOR, fg=TEXT_COLOR, bd=0, padx=8, pady=4,
+                  command=change_wallpaper).pack(side="left", padx=5)
 
     def show_display_tab(self):
         card1 = self.create_card("Monitor Resolution & Layout")
@@ -170,12 +186,26 @@ class AetherSettingsApp(tk.Tk):
 
         card2 = self.create_card("Display Scaling & Options")
         scale_var = tk.StringVar(value="1.0")
-        
+
+        def apply_scale():
+            val = scale_var.get()
+            mon_path = os.path.expanduser("~/.config/hypr/monitors.conf")
+            try:
+                os.makedirs(os.path.dirname(mon_path), exist_ok=True)
+                with open(mon_path, "w") as f:
+                    f.write(f"# AetherOS dynamic monitor configuration\nmonitor=,preferred,auto,{val}\n")
+                subprocess.run(["hyprctl", "reload"], check=False)
+                messagebox.showinfo("AetherOS", f"Display scale set to {val} and Hyprland reloaded.")
+            except Exception as e:
+                messagebox.showerror("AetherOS", f"Failed to update scaling: {e}")
+
         scale_frame = tk.Frame(card2, bg=CARD_BG)
         scale_frame.pack(anchor="w", pady=5)
         tk.Label(scale_frame, text="Scale Factor:", bg=CARD_BG, fg=TEXT_COLOR).pack(side="left", padx=(0, 10))
         for val in ["1.0", "1.25", "1.5", "2.0"]:
             tk.Radiobutton(scale_frame, text=val, value=val, variable=scale_var, bg=CARD_BG, fg=TEXT_COLOR, selectcolor=CARD_BG, activebackground=CARD_BG).pack(side="left", padx=5)
+
+        tk.Button(card2, text="Apply Display Scale", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=10, pady=4, command=apply_scale).pack(anchor="w", pady=(8, 2))
 
     def show_network_tab(self):
         card = self.create_card("Network & Connectivity")

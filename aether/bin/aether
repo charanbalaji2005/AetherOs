@@ -148,11 +148,13 @@ cmd_config() {
         return 1
       fi
       touch "$cfg_file"
+      chmod 600 "$cfg_file" 2>/dev/null || true
       if grep -q "^export ${key}=" "$cfg_file" 2>/dev/null; then
         sed -i "s|^export ${key}=.*|export ${key}=\"${val}\"|" "$cfg_file"
       else
         echo "export ${key}=\"${val}\"" >> "$cfg_file"
       fi
+      chmod 600 "$cfg_file" 2>/dev/null || true
       echo -e "${c_green}[✓] Updated ${key} in ${cfg_file}${c_reset}"
       ;;
     *)
