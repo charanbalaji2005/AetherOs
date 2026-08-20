@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# AetherOS Glassmorphic Power Menu via Wofi
+set -euo pipefail
+
+CHOSEN=$(printf "󰌾  Lock Screen\n󰤄  Sleep / Suspend\n󰜉  Restart System\n⏻  Shut Down\n󰍃  Log Out" | wofi --dmenu --prompt "Power Options" --width 340 --height 280 --location center --style /etc/skel/.config/wofi/style.css 2>/dev/null || true)
+
+case "$CHOSEN" in
+    *"Lock Screen"*)
+        hyprlock || true
+        ;;
+    *"Sleep / Suspend"*)
+        systemctl suspend
+        ;;
+    *"Restart System"*)
+        systemctl reboot
+        ;;
+    *"Shut Down"*)
+        systemctl poweroff
+        ;;
+    *"Log Out"*)
+        hyprctl dispatch exit 0 || pkill -KILL -u "$USER"
+        ;;
+esac

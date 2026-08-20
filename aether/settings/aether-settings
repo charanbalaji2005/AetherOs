@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 AetherOS Settings Application
-A modern glassmorphic control center for AetherOS.
+A modern glassmorphic control center for AetherOS with SSD storage management and Autologin controls.
 """
 
 import sys
@@ -54,7 +54,7 @@ class AetherSettingsApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("AetherOS Settings")
-        self.geometry("860x560")
+        self.geometry("900x600")
         self.configure(bg=BG_DARK)
 
         # Style configuration
@@ -87,7 +87,7 @@ class AetherSettingsApp(tk.Tk):
         main_container.pack(fill="both", expand=True, padx=15, pady=(0, 15))
 
         # Sidebar
-        sidebar = tk.Frame(main_container, bg=SIDEBAR_BG, width=200)
+        sidebar = tk.Frame(main_container, bg=SIDEBAR_BG, width=220)
         sidebar.pack(side="left", fill="y", padx=(0, 10))
 
         # Content Area
@@ -98,6 +98,7 @@ class AetherSettingsApp(tk.Tk):
         self.tabs = [
             ("🎨  Appearance", self.show_appearance_tab),
             ("🖥️  Display", self.show_display_tab),
+            ("💾  SSD & Storage", self.show_storage_tab),
             ("󰤨  Network", self.show_network_tab),
             ("🔊  Audio", self.show_audio_tab),
             ("󰧑  AI Config", self.show_ai_tab),
@@ -139,10 +140,10 @@ class AetherSettingsApp(tk.Tk):
         tab_func()
 
     def create_card(self, title):
-        card = tk.Frame(self.content_area, bg=CARD_BG, highlightbackground=BORDER_COLOR, highlightthickness=1, padx=15, pady=15)
-        card.pack(fill="x", pady=8)
-        lbl = tk.Label(card, text=title, font=("Segoe UI", 12, "bold"), bg=CARD_BG, fg=CYAN_ACCENT)
-        lbl.pack(anchor="w", pady=(0, 10))
+        card = tk.Frame(self.content_area, bg=CARD_BG, highlightbackground=BORDER_COLOR, highlightthickness=1, padx=15, pady=12)
+        card.pack(fill="x", pady=6)
+        lbl = tk.Label(card, text=title, font=("Segoe UI", 11, "bold"), bg=CARD_BG, fg=CYAN_ACCENT)
+        lbl.pack(anchor="w", pady=(0, 8))
         return card
 
     # --- TABS IMPLEMENTATION ---
@@ -172,11 +173,17 @@ class AetherSettingsApp(tk.Tk):
             if filename:
                 set_wallpaper_path(filename)
 
+        tk.Button(btn_frame, text="🪚 Chainsaw Man (Main)", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=8, pady=4,
+                  command=lambda: set_wallpaper_path("/usr/share/backgrounds/aetheros/chainsaw_man.png")).pack(side="left", padx=(0, 5))
+        tk.Button(btn_frame, text="🌆 Cyberpunk City", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=8, pady=4,
+                  command=lambda: set_wallpaper_path("/usr/share/backgrounds/aetheros/cyberpunk_city.png")).pack(side="left", padx=5)
+        tk.Button(btn_frame, text="⚡ Pain (Akatsuki)", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=8, pady=4,
+                  command=lambda: set_wallpaper_path("/usr/share/backgrounds/aetheros/pain_shinra_tensei.png")).pack(side="left", padx=5)
         tk.Button(btn_frame, text="🌌 Night Vending", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=8, pady=4,
-                  command=lambda: set_wallpaper_path("/usr/share/backgrounds/aetheros/vending_night.jpg")).pack(side="left", padx=(0, 5))
+                  command=lambda: set_wallpaper_path("/usr/share/backgrounds/aetheros/vending_night.jpg")).pack(side="left", padx=5)
         tk.Button(btn_frame, text="🌅 Sunset Cafe", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=8, pady=4,
                   command=lambda: set_wallpaper_path("/usr/share/backgrounds/aetheros/makima_sunset.jpg")).pack(side="left", padx=5)
-        tk.Button(btn_frame, text="Browse Custom...", bg=BORDER_COLOR, fg=TEXT_COLOR, bd=0, padx=8, pady=4,
+        tk.Button(btn_frame, text="📁 Browse Custom...", bg=BORDER_COLOR, fg=TEXT_COLOR, bd=0, padx=8, pady=4,
                   command=change_wallpaper).pack(side="left", padx=5)
 
     def show_display_tab(self):
@@ -206,6 +213,61 @@ class AetherSettingsApp(tk.Tk):
             tk.Radiobutton(scale_frame, text=val, value=val, variable=scale_var, bg=CARD_BG, fg=TEXT_COLOR, selectcolor=CARD_BG, activebackground=CARD_BG).pack(side="left", padx=5)
 
         tk.Button(card2, text="Apply Display Scale", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=10, pady=4, command=apply_scale).pack(anchor="w", pady=(8, 2))
+
+    def show_storage_tab(self):
+        # 1. SSD Storage & C: Drive Status
+        card1 = self.create_card("💾 Persistent SSD Storage & Drive Paths")
+        
+        target_path = "/mnt/c_drive/AetherOS"
+        if not os.path.exists(target_path):
+            if os.path.exists("/mnt/aether_storage/AetherOS"):
+                target_path = "/mnt/aether_storage/AetherOS"
+            else:
+                target_path = "/var/lib/aetheros/ssd_storage/AetherOS"
+
+        status_text = f"Active Storage Folder: {target_path}"
+        tk.Label(card1, text=status_text, font=("Segoe UI", 10, "bold"), bg=CARD_BG, fg=TEXT_COLOR).pack(anchor="w", pady=2)
+        tk.Label(card1, text="Persists user credentials, dotfiles, and workspace data across reboots.", bg=CARD_BG, fg=TEXT_MUTED).pack(anchor="w", pady=2)
+
+        btn_frame1 = tk.Frame(card1, bg=CARD_BG)
+        btn_frame1.pack(anchor="w", pady=8)
+
+        def sync_storage():
+            res = subprocess.run(["aether", "storage", "sync"], capture_output=True, text=True)
+            if res.returncode == 0:
+                messagebox.showinfo("AetherOS Storage", "Successfully synced all user configs and files to SSD storage!")
+            else:
+                messagebox.showwarning("AetherOS Storage", f"Sync completed with output:\n{res.stdout or res.stderr}")
+
+        def mount_storage():
+            res = subprocess.run(["aether", "storage", "mount"], capture_output=True, text=True)
+            messagebox.showinfo("AetherOS Storage", res.stdout if res.stdout else "Storage scan finished.")
+
+        tk.Button(btn_frame1, text="🔄 Sync Now to SSD", bg=CYAN_ACCENT, fg=BG_DARK, font=("Segoe UI", 10, "bold"), bd=0, padx=12, pady=5, command=sync_storage).pack(side="left", padx=(0, 6))
+        tk.Button(btn_frame1, text="🔍 Scan & Mount Drives", bg=BORDER_COLOR, fg=CYAN_ACCENT, bd=0, padx=12, pady=5, command=mount_storage).pack(side="left", padx=6)
+
+        # 2. One-Time Authentication & Autologin
+        card2 = self.create_card("🔐 User Authentication & Autologin")
+        sddm_file = "/etc/sddm.conf.d/aetheros.conf"
+        autologin_active = os.path.exists(sddm_file)
+        
+        auto_label = "Autologin Status: ENABLED (No password requested on subsequent logins)" if autologin_active else "Autologin Status: DISABLED (Password requested on login)"
+        auto_color = SUCCESS_COLOR if autologin_active else WARN_COLOR
+        tk.Label(card2, text=auto_label, font=("Segoe UI", 10, "bold"), bg=CARD_BG, fg=auto_color).pack(anchor="w", pady=2)
+        tk.Label(card2, text="Your credentials were set during initial setup and saved securely on SSD storage.", bg=CARD_BG, fg=TEXT_MUTED).pack(anchor="w", pady=2)
+
+        # 3. Directory Layout Explorer
+        card3 = self.create_card("📁 SSD Folder Hierarchy")
+        tree_text = (
+            f"{target_path}/\n"
+            "  ├── credentials/   -> aether-profile.json (Secured account metadata & password hash)\n"
+            "  ├── config/        -> Hyprland, Waybar, Kitty, and desktop preferences\n"
+            "  ├── home/          -> User personal files and document persistence\n"
+            "  ├── data/          -> General shared persistence storage\n"
+            "  └── backups/       -> Snapshot and profile restoration points"
+        )
+        lbl_tree = tk.Label(card3, text=tree_text, font=("Consolas", 9), justify="left", bg=BG_DARK, fg=CYAN_ACCENT, padx=10, pady=8)
+        lbl_tree.pack(anchor="w", fill="x", pady=4)
 
     def show_network_tab(self):
         card = self.create_card("Network & Connectivity")
@@ -276,7 +338,7 @@ class AetherSettingsApp(tk.Tk):
 
         card2 = self.create_card("About AetherOS")
         tk.Label(card2, text="AetherOS 1.0 — Fedora-based Hyprland OS", font=("Segoe UI", 11, "bold"), bg=CARD_BG, fg=TEXT_COLOR).pack(anchor="w")
-        tk.Label(card2, text="Designed for fast performance, AI integration, and sleek aesthetics.", bg=CARD_BG, fg=TEXT_MUTED).pack(anchor="w", pady=2)
+        tk.Label(card2, text="Designed for fast performance, AI integration, SSD persistence, and sleek aesthetics.", bg=CARD_BG, fg=TEXT_MUTED).pack(anchor="w", pady=2)
 
 if __name__ == "__main__":
     app = AetherSettingsApp()

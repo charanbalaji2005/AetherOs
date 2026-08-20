@@ -1,0 +1,6 @@
+# AetherOS Systemd User Service Presets
+enable pipewire.service
+enable pipewire.socket
+enable wireplumber.service
+enable pipewire-pulse.service
+enable pipewire-pulse.socket

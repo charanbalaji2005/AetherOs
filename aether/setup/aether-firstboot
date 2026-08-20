@@ -1,0 +1,711 @@
+#!/usr/bin/env python3
+"""
+AetherOS First-Boot Interactive User Account Wizard (OOBE) & SSD Persistence Engine
+Provides both a modern Glassmorphic Graphical Setup Wizard (UI/UX) and an interactive
+CLI fallback. Prompts user for username and password ONCE (never on subsequent logins),
+automatically detects SSD storage / C: drive partitions, creates persistent directory
+structures, saves credentials & configs, and configures permanent Hyprland autologin.
+"""
+
+import os
+import sys
+import getpass
+import subprocess
+import re
+import shutil
+import time
+import json
+
+try:
+    import readline
+except ImportError:
+    pass
+
+BANNER = r"""
+========================================================================
+   ___        _   _              ___  ____  
+  / _ \      | | | |            / _ \/ ___| 
+ / /_\ \ ___ | |_| |__   ___ _ / /_\ \___ \ 
+ |  _  |/ _ \| __| '_ \ / _ (_)  _  |___) |
+ | | | |  __/| |_| | | |  __/_| | | |____/ 
+ \_| |_/\___| \__|_| |_|\___(_)_| |_/      
+                                            
+            Welcome to AetherOS 1.0 First Setup
+========================================================================
+"""
+
+MARKER_FILE = "/var/lib/aetheros/setup-completed"
+DEFAULT_SSD_MOUNT = "/mnt/c_drive"
+FALLBACK_SSD_MOUNT = "/mnt/aether_storage"
+
+# Theme Colors for GUI
+BG_DARK = "#0d1117"
+CARD_BG = "#161b22"
+CYAN_ACCENT = "#56d4dd"
+TEXT_COLOR = "#e6f1f5"
+TEXT_MUTED = "#8b949e"
+BORDER_COLOR = "#30363d"
+SUCCESS_COLOR = "#57e389"
+WARN_COLOR = "#f5d76e"
+
+def clear():
+    os.system("clear" if os.name == "posix" else "cls")
+
+def clean_input(raw_str):
+    """Strip ANSI escape sequences and non-printable control characters."""
+    if not raw_str:
+        return ""
+    ansi_regex = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    cleaned = ansi_regex.sub('', raw_str)
+    cleaned = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', cleaned)
+    return cleaned.strip()
+
+def get_masked_password(prompt="  -> Enter password [default: aether]: "):
+    """
+    Prompt for password in terminal while printing asterisks '*' in real-time
+    so the user sees their keystrokes captured immediately on every single keypress.
+    Supports Backspace, Enter, Ctrl+C, Ctrl+D.
+    """
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+
+    if not sys.stdin.isatty():
+        try:
+            line = sys.stdin.readline()
+            return line.rstrip("\r\n")
+        except Exception:
+            return ""
+
+    try:
+        import termios
+        import tty
+
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        chars = []
+        try:
+            tty.setraw(fd)
+            while True:
+                ch = sys.stdin.read(1)
+                if not ch:
+                    break
+                # Enter or Return
+                if ch in ('\r', '\n'):
+                    sys.stdout.write('\r\n')
+                    sys.stdout.flush()
+                    break
+                # Ctrl+C
+                elif ch == '\x03':
+                    raise KeyboardInterrupt
+                # Ctrl+D
+                elif ch == '\x04':
+                    if not chars:
+                        raise EOFError
+                    break
+                # Backspace or Delete
+                elif ch in ('\x08', '\x7f'):
+                    if chars:
+                        chars.pop()
+                        sys.stdout.write('\b \b')
+                        sys.stdout.flush()
+                # Regular printable characters
+                elif 32 <= ord(ch) <= 126:
+                    chars.append(ch)
+                    sys.stdout.write('*')
+                    sys.stdout.flush()
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+        return "".join(chars)
+    except Exception:
+        # Fallback if termios is not available
+        return getpass.getpass("")
+
+def is_valid_username(name):
+    """Validate username: letters, numbers, underscores, hyphens, dots (1-32 chars)."""
+    if not name:
+        return False
+    return bool(re.match(r'^[a-z0-9_.-]{1,32}$', name))
+
+def get_password_hash(password):
+    """Generate SHA512 password hash for shadow file using openssl."""
+    try:
+        res = subprocess.run(
+            ["openssl", "passwd", "-6", password],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return res.stdout.strip()
+    except Exception:
+        return ""
+
+def scan_storage_devices():
+    """
+    Scan all connected block devices to find SSDs, NVMe drives, and Windows C: partitions.
+    Returns a list of candidate partition dicts.
+    """
+    candidates = []
+    try:
+        res = subprocess.run(
+            ["lsblk", "-J", "-o", "NAME,PATH,SIZE,TYPE,FSTYPE,LABEL,MOUNTPOINT,MODEL,TRAN"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        data = json.loads(res.stdout)
+        
+        def process_node(node, parent_info=None):
+            node_type = node.get("type", "")
+            fstype = node.get("fstype", "") or ""
+            path = node.get("path", "")
+            size = node.get("size", "")
+            label = node.get("label", "") or ""
+            mountpoint = node.get("mountpoint", "")
+            model = node.get("model", "") or (parent_info.get("model", "") if parent_info else "")
+            tran = node.get("tran", "") or (parent_info.get("tran", "") if parent_info else "")
+
+            # Filter valid candidate partitions (NTFS Windows partitions, ext4, btrfs, xfs)
+            if node_type in ("part", "disk") and fstype in ("ntfs", "ext4", "btrfs", "xfs", "vfat"):
+                is_ssd = "nvme" in path.lower() or tran.lower() in ("nvme", "sata", "usb")
+                is_windows = fstype == "ntfs" or "windows" in label.lower() or "os" in label.lower()
+                candidates.append({
+                    "path": path,
+                    "fstype": fstype,
+                    "size": size,
+                    "label": label,
+                    "mountpoint": mountpoint,
+                    "model": model,
+                    "is_ssd": is_ssd,
+                    "is_windows": is_windows
+                })
+
+            for child in node.get("children", []):
+                process_node(child, node)
+
+        for dev in data.get("blockdevices", []):
+            process_node(dev)
+
+    except Exception:
+        pass
+
+    return candidates
+
+def mount_drive(device_path, mount_dir, fstype=""):
+    """Mount a block device partition to a directory path."""
+    os.makedirs(mount_dir, exist_ok=True)
+    if os.path.ismount(mount_dir):
+        return True
+    
+    cmd = ["mount"]
+    if fstype == "ntfs":
+        cmd.extend(["-t", "ntfs-3g"])
+    cmd.extend([device_path, mount_dir])
+
+    res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if res.returncode == 0:
+        return True
+
+    # Retry with standard mount
+    res = subprocess.run(["mount", device_path, mount_dir], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return res.returncode == 0
+
+def find_existing_profile_on_storage():
+    """
+    Search candidate SSDs/drives for an existing AetherOS profile.
+    Returns (mount_dir, profile_data) if found, else (None, None).
+    """
+    candidates = scan_storage_devices()
+    test_mount = "/mnt/aether_probe"
+
+    for cand in candidates:
+        mp = cand.get("mountpoint")
+        temp_mounted = False
+        if not mp:
+            if mount_drive(cand["path"], test_mount, cand["fstype"]):
+                mp = test_mount
+                temp_mounted = True
+            else:
+                continue
+
+        profile_path = os.path.join(mp, "AetherOS", "credentials", "aether-profile.json")
+        alt_profile = os.path.join(mp, "aetheros-profile.json")
+
+        target_file = profile_path if os.path.exists(profile_path) else (alt_profile if os.path.exists(alt_profile) else None)
+
+        if target_file:
+            try:
+                with open(target_file, "r") as f:
+                    data = json.load(f)
+                if data.get("username"):
+                    return mp, data
+            except Exception:
+                pass
+
+        if temp_mounted:
+            subprocess.run(["umount", test_mount], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    return None, None
+
+def setup_ssd_storage_folders(storage_root):
+    """
+    Create folder paths on the SSD storage / C: drive.
+    Structure:
+      <storage_root>/AetherOS/
+        ├── credentials/
+        ├── config/
+        ├── home/
+        ├── data/
+        └── backups/
+    """
+    aether_dir = os.path.join(storage_root, "AetherOS")
+    paths = {
+        "root": aether_dir,
+        "credentials": os.path.join(aether_dir, "credentials"),
+        "config": os.path.join(aether_dir, "config"),
+        "home": os.path.join(aether_dir, "home"),
+        "data": os.path.join(aether_dir, "data"),
+        "backups": os.path.join(aether_dir, "backups"),
+    }
+    for p in paths.values():
+        os.makedirs(p, exist_ok=True)
+    return paths
+
+def save_profile_to_storage(storage_paths, username, password_hash, plain_password=""):
+    """Save user credentials, metadata, and autologin configuration to SSD storage."""
+    profile_data = {
+        "version": "1.0",
+        "username": username,
+        "password_hash": password_hash,
+        "autologin": True,
+        "session": "hyprland",
+        "created_at": int(time.time()),
+        "created_date": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
+        "storage_root": storage_paths["root"]
+    }
+    profile_file = os.path.join(storage_paths["credentials"], "aether-profile.json")
+    with open(profile_file, "w") as f:
+        json.dump(profile_data, f, indent=2)
+    try:
+        os.chmod(profile_file, 0o600)
+    except Exception:
+        pass
+
+    with open(os.path.join(storage_paths["root"], "setup-completed"), "w") as f:
+        f.write(f"USER={username}\nTIMESTAMP={int(time.time())}\n")
+
+    return profile_file
+
+def configure_sddm_autologin(username):
+    """Configure SDDM autologin & theme so the user is never asked for credentials on boot."""
+    sddm_conf_dir = "/etc/sddm.conf.d"
+    os.makedirs(sddm_conf_dir, exist_ok=True)
+    sddm_conf_path = os.path.join(sddm_conf_dir, "aetheros.conf")
+    with open(sddm_conf_path, "w") as f:
+        f.write(f"""# AetherOS SDDM Permanent Autologin Configuration
+[General]
+DisplayServer=wayland
+
+[Theme]
+Current=aetheros-glass
+ThemeDir=/usr/share/sddm/themes
+
+[Autologin]
+User={username}
+Session=hyprland
+Relogin=false
+""")
+
+def apply_user_account(username, password="", password_hash=""):
+    """Create or update user account with wheel, audio, video, input, render groups."""
+    groups = "wheel,audio,video,input"
+    if subprocess.run(["getent", "group", "render"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+        groups += ",render"
+
+    user_exists = (subprocess.run(["id", username], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0)
+    if user_exists:
+        subprocess.run(["usermod", "-aG", groups, "-s", "/bin/bash", username], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        useradd_cmd = ["useradd", "-m", "-G", groups, "-s", "/bin/bash", username]
+        res = subprocess.run(useradd_cmd)
+        if res.returncode != 0:
+            return False
+
+    # Set password
+    if password_hash:
+        res = subprocess.run(["usermod", "-p", password_hash, username], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if res.returncode != 0 and password:
+            chpasswd_p = subprocess.Popen(["chpasswd"], stdin=subprocess.PIPE, text=True)
+            chpasswd_p.communicate(input=f"{username}:{password}\n")
+    elif password:
+        chpasswd_p = subprocess.Popen(["chpasswd"], stdin=subprocess.PIPE, text=True)
+        chpasswd_p.communicate(input=f"{username}:{password}\n")
+    
+    # Populate user configuration from /etc/skel
+    user_home = f"/home/{username}"
+    user_config = os.path.join(user_home, ".config")
+    os.makedirs(user_config, exist_ok=True)
+
+    if os.path.exists("/etc/skel/.config"):
+        for item in os.listdir("/etc/skel/.config"):
+            s = os.path.join("/etc/skel/.config", item)
+            d = os.path.join(user_config, item)
+            if os.path.isdir(s):
+                shutil.copytree(s, d, dirs_exist_ok=True)
+            else:
+                shutil.copy2(s, d)
+
+    subprocess.run(["chown", "-R", f"{username}:{username}", user_home], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    scripts_dir = os.path.join(user_config, "waybar", "scripts")
+    if os.path.exists(scripts_dir):
+        for script in os.listdir(scripts_dir):
+            if script.endswith(".sh"):
+                os.chmod(os.path.join(scripts_dir, script), 0o755)
+
+    return True
+
+def sync_configs_to_ssd(username, storage_paths):
+    """Sync user dotfiles and configuration to SSD storage."""
+    user_config = f"/home/{username}/.config"
+    dest_config = storage_paths["config"]
+    if os.path.exists(user_config):
+        try:
+            for item in os.listdir(user_config):
+                s = os.path.join(user_config, item)
+                d = os.path.join(dest_config, item)
+                if os.path.isdir(s):
+                    shutil.copytree(s, d, dirs_exist_ok=True)
+                else:
+                    shutil.copy2(s, d)
+        except Exception:
+            pass
+
+def restore_configs_from_ssd(username, storage_paths):
+    """Restore user dotfiles and configuration from SSD storage."""
+    src_config = storage_paths.get("config") or os.path.join(storage_paths.get("root", ""), "config")
+    user_config = f"/home/{username}/.config"
+    if os.path.exists(src_config) and os.listdir(src_config):
+        os.makedirs(user_config, exist_ok=True)
+        try:
+            for item in os.listdir(src_config):
+                s = os.path.join(src_config, item)
+                d = os.path.join(user_config, item)
+                if os.path.isdir(s):
+                    shutil.copytree(s, d, dirs_exist_ok=True)
+                else:
+                    shutil.copy2(s, d)
+            subprocess.run(["chown", "-R", f"{username}:{username}", f"/home/{username}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            pass
+
+def launch_desktop():
+    """Start or restart SDDM display manager to autologin straight to Hyprland."""
+    if subprocess.run(["systemctl", "is-active", "--quiet", "sddm"]).returncode == 0:
+        subprocess.run(["systemctl", "restart", "sddm"])
+    else:
+        subprocess.run(["systemctl", "start", "sddm"])
+
+# --- GRAPHICAL SETUP WIZARD (UI/UX) ---
+
+def run_gui_wizard():
+    """Launch rich Tkinter Glassmorphism Setup Wizard if display is available."""
+    try:
+        import tkinter as tk
+        from tkinter import ttk, messagebox
+    except ImportError:
+        return False
+
+    if not os.environ.get("DISPLAY") and not os.environ.get("WAYLAND_DISPLAY"):
+        return False
+
+    success = False
+
+    class FirstBootGUI(tk.Tk):
+        def __init__(self):
+            super().__init__()
+            self.title("AetherOS 1.0 — Initial Setup Wizard")
+            self.geometry("760x520")
+            self.configure(bg=BG_DARK)
+            self.resizable(False, False)
+
+            self.candidates = scan_storage_devices()
+            self.selected_drive = tk.StringVar(value="")
+            if self.candidates:
+                win_drive = next((c for c in self.candidates if c['is_windows']), None)
+                ssd_drive = next((c for c in self.candidates if c['is_ssd']), None)
+                best = win_drive or ssd_drive or self.candidates[0]
+                self.selected_drive.set(best["path"])
+
+            self.create_widgets()
+
+        def create_widgets(self):
+            # Top Banner
+            header = tk.Frame(self, bg=BG_DARK, height=70)
+            header.pack(fill="x", padx=25, pady=(20, 10))
+
+            tk.Label(header, text="󰢻  AetherOS Initial Setup", font=("Segoe UI", 18, "bold"), bg=BG_DARK, fg=CYAN_ACCENT).pack(side="left")
+            tk.Label(header, text="Account & Storage Persistence", font=("Segoe UI", 10), bg=BG_DARK, fg=TEXT_MUTED).pack(side="right", pady=8)
+
+            # Central Glass Card
+            card = tk.Frame(self, bg=CARD_BG, highlightbackground=BORDER_COLOR, highlightthickness=1, padx=30, pady=25)
+            card.pack(fill="both", expand=True, padx=25, pady=(0, 20))
+
+            # Step 1: User Account
+            tk.Label(card, text="1. Administrator Account", font=("Segoe UI", 12, "bold"), bg=CARD_BG, fg=CYAN_ACCENT).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 10))
+
+            tk.Label(card, text="Username:", font=("Segoe UI", 10), bg=CARD_BG, fg=TEXT_COLOR).grid(row=1, column=0, sticky="w", pady=4)
+            self.entry_user = tk.Entry(card, width=32, bg=BG_DARK, fg=CYAN_ACCENT, insertbackground=CYAN_ACCENT, font=("Segoe UI", 10))
+            self.entry_user.insert(0, "aether")
+            self.entry_user.grid(row=1, column=1, sticky="w", pady=4, padx=(10, 0))
+
+            tk.Label(card, text="Password:", font=("Segoe UI", 10), bg=CARD_BG, fg=TEXT_COLOR).grid(row=2, column=0, sticky="w", pady=4)
+            self.entry_pass = tk.Entry(card, width=32, show="*", bg=BG_DARK, fg=CYAN_ACCENT, insertbackground=CYAN_ACCENT, font=("Segoe UI", 10))
+            self.entry_pass.insert(0, "aether")
+            self.entry_pass.grid(row=2, column=1, sticky="w", pady=4, padx=(10, 0))
+
+            tk.Label(card, text="Confirm Password:", font=("Segoe UI", 10), bg=CARD_BG, fg=TEXT_COLOR).grid(row=3, column=0, sticky="w", pady=4)
+            self.entry_confirm = tk.Entry(card, width=32, show="*", bg=BG_DARK, fg=CYAN_ACCENT, insertbackground=CYAN_ACCENT, font=("Segoe UI", 10))
+            self.entry_confirm.insert(0, "aether")
+            self.entry_confirm.grid(row=3, column=1, sticky="w", pady=4, padx=(10, 0))
+
+            # Step 2: SSD Storage Selection
+            tk.Label(card, text="2. SSD Storage & C: Drive Persistence Target", font=("Segoe UI", 12, "bold"), bg=CARD_BG, fg=CYAN_ACCENT).grid(row=4, column=0, columnspan=2, sticky="w", pady=(18, 8))
+
+            if self.candidates:
+                drive_frame = tk.Frame(card, bg=CARD_BG)
+                drive_frame.grid(row=5, column=0, columnspan=2, sticky="w", pady=2)
+                for cand in self.candidates[:3]:
+                    label_txt = f"{cand['path']} ({cand['size']}, {cand['fstype']})"
+                    if cand['is_windows']:
+                        label_txt += " [Windows C: Drive]"
+                    elif cand['is_ssd']:
+                        label_txt += " [SSD]"
+                    tk.Radiobutton(drive_frame, text=label_txt, value=cand['path'], variable=self.selected_drive, bg=CARD_BG, fg=TEXT_COLOR, selectcolor=CARD_BG, activebackground=CARD_BG).pack(anchor="w", pady=2)
+            else:
+                tk.Label(card, text="Using default system storage (/var/lib/aetheros/ssd_storage)", bg=CARD_BG, fg=TEXT_MUTED).grid(row=5, column=0, columnspan=2, sticky="w", pady=2)
+
+            # Step 3: Autologin note
+            tk.Label(card, text="3. One-Time Setup: SDDM Autologin will be enabled permanently for instant boot.", font=("Segoe UI", 10, "italic"), bg=CARD_BG, fg=SUCCESS_COLOR).grid(row=6, column=0, columnspan=2, sticky="w", pady=(12, 10))
+
+            # Bottom Action Button
+            btn_submit = tk.Button(
+                self,
+                text="Complete Setup & Launch Hyprland  󰍃",
+                font=("Segoe UI", 11, "bold"),
+                bg=CYAN_ACCENT,
+                fg=BG_DARK,
+                bd=0,
+                padx=20,
+                pady=10,
+                activebackground="#7cc7ff",
+                activeforeground=BG_DARK,
+                cursor="hand2",
+                command=self.submit
+            )
+            btn_submit.pack(pady=(0, 15))
+
+        def submit(self):
+            nonlocal success
+            user = clean_input(self.entry_user.get()).lower()
+            pw = clean_input(self.entry_pass.get())
+            conf = clean_input(self.entry_confirm.get())
+
+            if not user or not is_valid_username(user):
+                messagebox.showerror("Error", "Invalid username! Use lowercase letters, numbers, and hyphens.")
+                return
+
+            if pw != conf:
+                messagebox.showerror("Error", "Passwords do not match!")
+                return
+
+            # Target storage path
+            chosen_dev = self.selected_drive.get()
+            target_mount = DEFAULT_SSD_MOUNT
+            if chosen_dev:
+                cand = next((c for c in self.candidates if c['path'] == chosen_dev), None)
+                mount_drive(chosen_dev, DEFAULT_SSD_MOUNT, cand['fstype'] if cand else "")
+            else:
+                target_mount = "/var/lib/aetheros/ssd_storage"
+                os.makedirs(target_mount, exist_ok=True)
+
+            pw_hash = get_password_hash(pw)
+            if not apply_user_account(user, password=pw, password_hash=pw_hash):
+                messagebox.showerror("Error", "Failed to create user account.")
+                return
+
+            storage_paths = setup_ssd_storage_folders(target_mount)
+            save_profile_to_storage(storage_paths, user, pw_hash, plain_password=pw)
+            sync_configs_to_ssd(user, storage_paths)
+            configure_sddm_autologin(user)
+
+            os.makedirs(os.path.dirname(MARKER_FILE), exist_ok=True)
+            with open(MARKER_FILE, "w") as f:
+                f.write(f"USER={user}\nSTORAGE={storage_paths['root']}\nTIMESTAMP={int(time.time())}\n")
+
+            success = True
+            self.destroy()
+
+    try:
+        app = FirstBootGUI()
+        app.mainloop()
+        return success
+    except Exception:
+        return False
+
+# --- MAIN CONTROLLER ---
+
+def main():
+    # 0. Check local marker file
+    if os.path.exists(MARKER_FILE):
+        return 0
+
+    # 1. Automatic SSD Probe & Auto-Restore check (Bypasses prompt if already configured)
+    mp, saved_profile = find_existing_profile_on_storage()
+    if saved_profile and saved_profile.get("username"):
+        restored_user = saved_profile["username"]
+        pw_hash = saved_profile.get("password_hash", "")
+        print(f"\n  [+] Found existing AetherOS profile on SSD storage ({mp}).")
+        print(f"  [+] Automatically restoring user '{restored_user}' (skipping prompt)...")
+
+        apply_user_account(restored_user, password_hash=pw_hash)
+        storage_paths = setup_ssd_storage_folders(mp)
+        restore_configs_from_ssd(restored_user, storage_paths)
+        configure_sddm_autologin(restored_user)
+
+        os.makedirs(os.path.dirname(MARKER_FILE), exist_ok=True)
+        with open(MARKER_FILE, "w") as f:
+            f.write(f"USER={restored_user}\nRESTORED=1\nTIMESTAMP={int(time.time())}\n")
+
+        print("  [+] Autologin enabled. Launching Hyprland Desktop...\n")
+        time.sleep(1)
+        launch_desktop()
+        return 0
+
+    # 2. Try Graphical Setup Wizard (UI/UX)
+    if run_gui_wizard():
+        print("  [+] GUI setup completed successfully! Launching Desktop...")
+        time.sleep(1)
+        launch_desktop()
+        return 0
+
+    # 3. Interactive First-Boot CLI Fallback (If GUI display is not active)
+    clear()
+    print(BANNER)
+    print("Welcome! Create your user account once — you will be automatically logged in.\n")
+
+    candidates = scan_storage_devices()
+    selected_mount = DEFAULT_SSD_MOUNT
+    selected_device = None
+
+    if candidates:
+        print("  Detected Storage Drives & SSDs:")
+        for idx, cand in enumerate(candidates):
+            desc = f"{cand['path']} ({cand['size']}, {cand['fstype']}"
+            if cand['label']:
+                desc += f", label: {cand['label']}"
+            if cand['is_windows']:
+                desc += " [Windows C: Drive]"
+            elif cand['is_ssd']:
+                desc += " [SSD Drive]"
+            desc += ")"
+            print(f"    [{idx + 1}] {desc}")
+        print()
+
+        win_drive = next((c for c in candidates if c['is_windows']), None)
+        ssd_drive = next((c for c in candidates if c['is_ssd']), None)
+        best_drive = win_drive or ssd_drive or candidates[0]
+        selected_device = best_drive["path"]
+        mount_drive(selected_device, DEFAULT_SSD_MOUNT, best_drive["fstype"])
+        print(f"  [+] Persistent SSD storage target: {selected_device} -> {DEFAULT_SSD_MOUNT}/AetherOS\n")
+    else:
+        selected_mount = "/var/lib/aetheros/ssd_storage"
+        os.makedirs(selected_mount, exist_ok=True)
+        print(f"  [i] Using system storage path: {selected_mount}/AetherOS\n")
+
+    # Prompt for Username (ONCE)
+    username = ""
+    while True:
+        try:
+            raw = input("  -> Enter desired username [default: aether]: ")
+        except (KeyboardInterrupt, EOFError):
+            print("\n")
+            continue
+
+        cleaned = clean_input(raw).lower()
+        if not cleaned:
+            cleaned = "aether"
+
+        if not is_valid_username(cleaned):
+            print("    [!] Username must contain only lowercase letters, numbers, hyphens, or underscores.\n")
+            continue
+
+        username = cleaned
+        print(f"    [+] Selected username: {username}")
+        break
+
+    # Prompt for Password (ONCE)
+    password = ""
+    while True:
+        print()
+        try:
+            raw_pass = get_masked_password("  -> Enter password [default: aether]: ")
+        except (KeyboardInterrupt, EOFError):
+            print("\n")
+            continue
+
+        password = clean_input(raw_pass)
+        if not password:
+            password = "aether"
+            print("    [+] Using default password: aether")
+            break
+
+        try:
+            raw_confirm = get_masked_password("  -> Confirm password: ")
+        except (KeyboardInterrupt, EOFError):
+            print("\n")
+            continue
+
+        confirm = clean_input(raw_confirm)
+        if password != confirm:
+            print("    [!] Passwords do not match! Please try again.")
+            continue
+        break
+
+    print("\n  ========================================================================")
+    print(f"  Configuring account '{username}' & saving to SSD storage...")
+
+    pw_hash = get_password_hash(password)
+    if not apply_user_account(username, password=password, password_hash=pw_hash):
+        print(f"  [!] Failed to create user account '{username}'.")
+        time.sleep(3)
+        return 1
+
+    storage_paths = setup_ssd_storage_folders(selected_mount)
+    save_profile_to_storage(storage_paths, username, pw_hash, plain_password=password)
+    sync_configs_to_ssd(username, storage_paths)
+
+    print(f"  [+] Saved account and dotfiles to SSD path: {storage_paths['root']}")
+    print(f"      ├── credentials/ (aether-profile.json)")
+    print(f"      ├── config/      (hypr, waybar, kitty configs)")
+    print(f"      ├── home/        (user persistence)")
+    print(f"      ├── data/        (shared storage)")
+    print(f"      └── backups/")
+
+    configure_sddm_autologin(username)
+    print(f"  [+] Autologin configured for user '{username}' (No password required on login).")
+
+    os.makedirs(os.path.dirname(MARKER_FILE), exist_ok=True)
+    with open(MARKER_FILE, "w") as f:
+        f.write(f"USER={username}\nSTORAGE={storage_paths['root']}\nTIMESTAMP={int(time.time())}\n")
+
+    print(f"  [+] Setup completed successfully!")
+    print("  Launching AetherOS Desktop Environment...")
+    print("  ========================================================================\n")
+    time.sleep(1.5)
+
+    launch_desktop()
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

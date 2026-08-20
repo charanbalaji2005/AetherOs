@@ -1,0 +1,72 @@
+/* AetherOS Glassmorphic Cyberpunk Wofi Stylesheet */
+
+window {
+    margin: 0px;
+    background-color: rgba(13, 17, 23, 0.85);
+    border: 2px solid rgba(157, 78, 221, 0.6);
+    border-radius: 16px;
+    font-family: 'Segoe UI', 'Outfit', 'Inter', sans-serif;
+    font-size: 14px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+#input {
+    margin: 16px 16px 10px 16px;
+    padding: 10px 14px;
+    border: 1px solid rgba(86, 212, 221, 0.4);
+    border-radius: 12px;
+    color: #e6f1f5;
+    background-color: rgba(255, 255, 255, 0.06);
+    outline: none;
+    font-size: 14px;
+}
+
+#input:focus {
+    border: 1px solid #56d4dd;
+    background-color: rgba(86, 212, 221, 0.1);
+    box-shadow: 0 0 12px rgba(86, 212, 221, 0.3);
+}
+
+#inner-box {
+    margin: 8px 16px 16px 16px;
+    background-color: transparent;
+}
+
+#outer-box {
+    margin: 0px;
+    background-color: transparent;
+}
+
+#scroll {
+    margin: 0px;
+    border: none;
+}
+
+#text {
+    margin: 4px 10px;
+    color: #cbd5e1;
+}
+
+#entry {
+    padding: 8px 10px;
+    margin: 2px 0px;
+    border-radius: 10px;
+    background-color: transparent;
+    transition: all 0.2s ease-in-out;
+}
+
+#entry:selected {
+    background: linear-gradient(135deg, rgba(157, 78, 221, 0.35), rgba(86, 212, 221, 0.25));
+    border: 1px solid rgba(199, 125, 255, 0.5);
+    box-shadow: 0 4px 14px rgba(157, 78, 221, 0.3);
+}
+
+#entry:selected #text {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+#img {
+    margin-right: 10px;
+    background-color: transparent;
+}

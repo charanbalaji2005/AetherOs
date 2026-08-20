@@ -3,16 +3,50 @@
 # Install: sudo install -m 755 aether /usr/local/bin/aether
 set -euo pipefail
 
-VERSION="0.1.0"
+VERSION="1.0.0"
 
-c_cyan="\033[36m"; c_reset="\033[0m"; c_bold="\033[1m"; c_green="\033[32m"; c_red="\033[31m"
+c_cyan="\033[36m"; c_reset="\033[0m"; c_bold="\033[1m"; c_green="\033[32m"; c_red="\033[31m"; c_yellow="\033[33m"
+
+# Animated Terminal Loading Spinner
+run_with_spinner() {
+  local msg="$1"
+  shift
+  local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+  local temp_out
+  temp_out=$(mktemp)
+  
+  ("$@") >"$temp_out" 2>&1 &
+  local pid=$!
+  
+  tput civis 2>/dev/null || true
+  while kill -0 "$pid" 2>/dev/null; do
+    local temp=${spinstr#?}
+    printf "\r  ${c_cyan}[%c]${c_reset} %s..." "$spinstr" "$msg"
+    spinstr=$temp${spinstr%"$temp"}
+    sleep 0.08
+  done
+  wait "$pid" 2>/dev/null
+  local exit_code=$?
+  tput cnorm 2>/dev/null || true
+
+  if [[ $exit_code -eq 0 ]]; then
+    printf "\r  ${c_green}[✓]${c_reset} %s   \n" "$msg"
+  else
+    printf "\r  ${c_red}[✗]${c_reset} %s (Failed)   \n" "$msg"
+    cat "$temp_out" | sed 's/^/      /'
+  fi
+  rm -f "$temp_out"
+  return $exit_code
+}
 
 usage() {
   cat <<EOF
 ${c_bold}aether${c_reset} — AetherOS system tool (v${VERSION})
 
-Usage: aether <command>
+Usage: aether <command> [options]
 
+  storage     Manage SSD & C: drive storage persistence (status|sync|mount|folders)
+  autologin   Manage one-time authentication & autologin (status|enable|disable)
   firstboot   Run initial post-install configuration and system check
   settings    Launch the AetherOS Control Center GUI
   update      Update system + flatpaks (dnf5 + flatpak)
@@ -24,6 +58,219 @@ Usage: aether <command>
   config      Configure AetherOS settings (e.g. AI API keys)
   ai <prompt> Ask the configured AI provider a question
 EOF
+}
+
+cmd_storage() {
+  local sub="${1:-status}"; shift || true
+  case "$sub" in
+    status)
+      echo -e "${c_bold}${c_cyan}=== AetherOS SSD Storage & Persistence Status ===${c_reset}"
+      echo -e "\n${c_bold}Detected Block Devices & Partitions:${c_reset}"
+      if command -v lsblk >/dev/null 2>&1; then
+        lsblk -o NAME,SIZE,TYPE,FSTYPE,LABEL,MOUNTPOINT,MODEL
+      else
+        df -h
+      fi
+
+      echo -e "\n${c_bold}Active SSD Storage Paths:${c_reset}"
+      local target_dirs=("/mnt/c_drive/AetherOS" "/mnt/aether_storage/AetherOS" "/var/lib/aetheros/ssd_storage/AetherOS")
+      local found=0
+      for d in "${target_dirs[@]}"; do
+        if [[ -d "$d" ]]; then
+          echo -e "  ${c_green}[✓] Mounted/Active:${c_reset} $d"
+          echo "      Directory Tree:"
+          ls -la "$d" 2>/dev/null | awk '{print "        " $0}'
+          found=1
+        fi
+      done
+      if [[ $found -eq 0 ]]; then
+        echo -e "  ${c_yellow}[!] No active SSD storage folder found at default locations.${c_reset}"
+        echo "      Run 'aether storage mount' to scan and mount SSD/C: drive partitions."
+      fi
+
+      if [[ -f "/var/lib/aetheros/setup-completed" ]]; then
+        echo -e "\n${c_bold}First-Boot Profile Status:${c_reset}"
+        cat /var/lib/aetheros/setup-completed | sed 's/^/  /'
+      fi
+      ;;
+
+    credentials)
+      echo -e "${c_bold}${c_cyan}=== AetherOS Account & Storage Persistence Information ===${c_reset}"
+      echo -e "\n${c_bold}Current Active User:${c_reset} $(whoami)"
+      echo -e "${c_bold}Home Directory:${c_reset} $HOME"
+      
+      echo -e "\n${c_bold}Persistent Storage Credentials Profile:${c_reset}"
+      local profile_found=0
+      local test_paths=(
+        "/mnt/c_drive/AetherOS/credentials/aether-profile.json"
+        "/mnt/aether_storage/AetherOS/credentials/aether-profile.json"
+        "/var/lib/aetheros/ssd_storage/AetherOS/credentials/aether-profile.json"
+      )
+      for p in "${test_paths[@]}"; do
+        if [[ -f "$p" ]]; then
+          echo -e "  ${c_green}[✓] Profile File:${c_reset} $p"
+          cat "$p" | sed 's/^/      /'
+          profile_found=1
+          break
+        fi
+      done
+      if [[ $profile_found -eq 0 ]]; then
+        echo -e "  ${c_yellow}[!] No external persistence profile file found.${c_reset}"
+        echo -e "  User accounts are managed by system PAM/shadow."
+      fi
+      
+      echo -e "\n${c_bold}Password Management:${c_reset}"
+      echo "  • To change your password: run 'passwd'"
+      echo "  • To reset password as admin: run 'sudo passwd <username>'"
+      ;;
+
+    mount)
+      echo -e "${c_cyan}==>${c_reset} Scanning and mounting ALL storage drives (SSD, HDD, NVMe, USB, Windows C: drive)..."
+      local base_mnt="/mnt/aether_storage"
+      mkdir -p "$base_mnt/disks" "$base_mnt/AetherOS"
+      mkdir -p /mnt/c_drive
+
+      # Loop over all block device partitions
+      local count=0
+      while IFS= read -r line; do
+        local dev=$(echo "$line" | awk '{print $1}')
+        local fstype=$(echo "$line" | awk '{print $2}')
+        local label=$(echo "$line" | awk '{print $3}')
+        local current_mnt=$(echo "$line" | awk '{print $4}')
+
+        [[ -z "$dev" || "$fstype" == "swap" || "$fstype" == "crypto_LUKS" ]] && continue
+
+        local target_name="${label:-$(basename "$dev")}"
+        local target_path="$base_mnt/disks/$target_name"
+
+        if [[ -z "$current_mnt" || "$current_mnt" == "" ]]; then
+          mkdir -p "$target_path"
+          if [[ "$fstype" == "ntfs" ]]; then
+            mount -t ntfs-3g "$dev" "$target_path" 2>/dev/null || mount "$dev" "$target_path" 2>/dev/null || true
+          else
+            mount "$dev" "$target_path" 2>/dev/null || true
+          fi
+          if mountpoint -q "$target_path"; then
+            echo -e "  ${c_green}[✓] Mounted $dev ($fstype) -> $target_path${c_reset}"
+            count=$((count + 1))
+            if [[ "$fstype" == "ntfs" && ! -d "/mnt/c_drive/Windows" ]]; then
+              ln -sfn "$target_path" /mnt/c_drive 2>/dev/null || true
+            fi
+          fi
+        else
+          echo -e "  ${c_blue}[i] $dev ($fstype) active at $current_mnt${c_reset}"
+          ln -sfn "$current_mnt" "$base_mnt/disks/$target_name" 2>/dev/null || true
+        fi
+      done < <(lsblk -rnpo NAME,FSTYPE,LABEL,MOUNTPOINT 2>/dev/null | grep -v "loop" || true)
+
+      # Create organized selected folders inside /mnt/aether_storage/AetherOS
+      local main_folder="$base_mnt/AetherOS"
+      mkdir -p "$main_folder/credentials" "$main_folder/config" "$main_folder/home" "$main_folder/wallpapers" "$main_folder/backups" "$main_folder/data"
+      echo -e "\n${c_bold}${c_green}[✓] Unified Storage Folder Ready:${c_reset} $main_folder"
+      echo "    ├── credentials/  (Account & auth persistence)"
+      echo "    ├── config/       (Hyprland, Waybar, Kitty configs)"
+      echo "    ├── home/         (User documents, downloads, projects)"
+      echo "    ├── wallpapers/   (Custom desktop backgrounds)"
+      echo "    └── backups/      (System recovery snapshots)"
+      ;;
+
+    sync)
+      echo -e "${c_cyan}==>${c_reset} Syncing user configuration and dotfiles to SSD storage..."
+      local user_name="${USER:-$(whoami)}"
+      local home_dir="${HOME:-/home/$user_name}"
+      local target_dir=""
+
+      if [[ -d "/mnt/c_drive/AetherOS" ]]; then
+        target_dir="/mnt/c_drive/AetherOS"
+      elif [[ -d "/mnt/aether_storage/AetherOS" ]]; then
+        target_dir="/mnt/aether_storage/AetherOS"
+      else
+        target_dir="/var/lib/aetheros/ssd_storage/AetherOS"
+      fi
+
+      mkdir -p "$target_dir/config" "$target_dir/home" "$target_dir/data" "$target_dir/backups"
+
+      if [[ -d "$home_dir/.config" ]]; then
+        cp -ru "$home_dir/.config"/* "$target_dir/config/" 2>/dev/null || true
+        echo -e "  ${c_green}[✓] Synced ~/.config to $target_dir/config/${c_reset}"
+      fi
+
+      # Sync essential documents if present
+      for d in Documents Projects Pictures; do
+        if [[ -d "$home_dir/$d" ]]; then
+          mkdir -p "$target_dir/home/$d"
+          cp -ru "$home_dir/$d"/* "$target_dir/home/$d/" 2>/dev/null || true
+          echo -e "  ${c_green}[✓] Synced ~/$d to $target_dir/home/$d/${c_reset}"
+        fi
+      done
+
+      echo -e "${c_green}[✓] SSD Storage synchronization complete.${c_reset}"
+      ;;
+
+    folders)
+      local base="${1:-/mnt/c_drive}"
+      echo -e "${c_cyan}==>${c_reset} Creating AetherOS SSD folder structure at ${base}/AetherOS..."
+      mkdir -p "${base}/AetherOS/credentials" \
+               "${base}/AetherOS/config" \
+               "${base}/AetherOS/home" \
+               "${base}/AetherOS/data" \
+               "${base}/AetherOS/backups"
+      echo -e "${c_green}[✓] Folder hierarchy ready:${c_reset}"
+      echo "  ├── credentials/ (aether-profile.json)"
+      echo "  ├── config/      (Hyprland & Waybar settings)"
+      echo "  ├── home/        (User files)"
+      echo "  ├── data/        (General persistence)"
+      echo "  └── backups/"
+      ;;
+
+    *)
+      echo "Usage: aether storage [status|sync|mount|folders [base_path]]"
+      return 1
+      ;;
+  esac
+}
+
+cmd_autologin() {
+  local sub="${1:-status}"; shift || true
+  local sddm_file="/etc/sddm.conf.d/aetheros.conf"
+  case "$sub" in
+    status)
+      echo -e "${c_bold}${c_cyan}=== AetherOS Autologin Status ===${c_reset}"
+      if [[ -f "$sddm_file" ]]; then
+        echo -e "${c_green}[✓] Autologin is ENABLED (Credentials prompted only once on first boot).${c_reset}"
+        echo -e "Configuration ($sddm_file):"
+        cat "$sddm_file" | sed 's/^/  /'
+      else
+        echo -e "${c_yellow}[!] Autologin configuration not found at $sddm_file.${c_reset}"
+      fi
+      ;;
+    enable)
+      local u="${1:-${USER:-aether}}"
+      echo -e "${c_cyan}==>${c_reset} Enabling permanent autologin for user '$u'..."
+      sudo mkdir -p /etc/sddm.conf.d
+      sudo bash -c "cat > '$sddm_file' <<EOF
+[General]
+DisplayServer=wayland
+
+[Autologin]
+User=$u
+Session=hyprland
+Relogin=false
+EOF"
+      echo -e "${c_green}[✓] Autologin permanently configured for user '$u'.${c_reset}"
+      ;;
+    disable)
+      echo -e "${c_cyan}==>${c_reset} Disabling SDDM autologin..."
+      if [[ -f "$sddm_file" ]]; then
+        sudo rm -f "$sddm_file"
+      fi
+      echo -e "${c_green}[✓] Autologin disabled. SDDM login prompt will be displayed on boot.${c_reset}"
+      ;;
+    *)
+      echo "Usage: aether autologin [status|enable <username>|disable]"
+      return 1
+      ;;
+  esac
 }
 
 cmd_update() {
@@ -164,7 +411,6 @@ cmd_config() {
 }
 
 cmd_ai() {
-  # Load configuration file if present
   if [[ -f "${HOME}/.config/aether/config" ]]; then
     # shellcheck source=/dev/null
     source "${HOME}/.config/aether/config"
@@ -216,10 +462,8 @@ EOF
 cmd_firstboot() {
   echo -e "${c_cyan}==>${c_reset} Running AetherOS first-boot setup..."
 
-  # Create default user directories if missing
   mkdir -p ~/.config/hypr ~/.config/waybar/scripts ~/.config/kitty
 
-  # Copy missing default configs from /etc/skel if present
   if [[ -d /etc/skel/.config ]]; then
     cp -rn /etc/skel/.config/* ~/.config/ 2>/dev/null || true
     chmod +x ~/.config/waybar/scripts/*.sh 2>/dev/null || true
@@ -263,22 +507,143 @@ AetherOS is ready.
 EOF
 }
 
+cmd_wallpaper() {
+  local action="${1:-list}"
+  local bg_dir="/usr/share/backgrounds/aetheros"
+  case "$action" in
+    list)
+      echo -e "${c_cyan}${c_bold}=== AetherOS Available Wallpapers ===${c_reset}"
+      if [[ -d "$bg_dir" ]]; then
+        ls -1 "$bg_dir" | grep -E "\.(png|jpg|jpeg)$" | while read -r f; do
+          echo -e "  • ${c_green}${f}${c_reset}"
+        done
+      fi
+      ;;
+    set)
+      local name="${2:-cyberpunk_city.png}"
+      local target="$name"
+      if [[ ! -f "$target" && -f "$bg_dir/$name" ]]; then
+        target="$bg_dir/$name"
+      fi
+      if [[ -f "$target" ]]; then
+        pkill swaybg 2>/dev/null || true
+        swaybg -i "$target" -m fill >/dev/null 2>&1 &
+        echo -e "${c_green}[✓] Applied wallpaper: ${target}${c_reset}"
+      else
+        echo -e "${c_red}[!] Wallpaper file not found: ${name}${c_reset}"
+        return 1
+      fi
+      ;;
+    *)
+      echo "Usage: aether wallpaper [list | set <name_or_path>]"
+      ;;
+  esac
+}
+
+cmd_sysinfo() {
+  local os_name="AetherOS 1.0 (Cyberpunk Glass)"
+  local kernel=$(uname -r)
+  local uptime=$(uptime -p 2>/dev/null || uptime | awk '{print $3}')
+  local shell="${SHELL:-/bin/bash}"
+  local wm="Hyprland (Wayland)"
+  local cpu=$(grep -m1 "model name" /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs || echo "Unknown CPU")
+  local mem=$(free -h | awk '/Mem:/ {print $3 "/" $2}')
+  local gpu=$(lspci 2>/dev/null | grep -iE "vga|3d|display" | head -n1 | cut -d: -f3 | xargs || echo "Integrated Graphics")
+
+  cat <<EOF
+
+  ${c_purple}   █████╗ ███████╗████████╗██╗  ██╗███████╗██████╗ ${c_reset}   ${c_bold}${c_cyan}${os_name}${c_reset}
+  ${c_purple}  ██╔══██╗██╔════╝╚══██╔══╝██║  ██║██╔════╝██╔══██╗${c_reset}   ----------------------------------
+  ${c_purple}  ███████║█████╗     ██║   ███████║█████╗  ██████╔╝${c_reset}   ${c_bold}OS:${c_reset}      AetherOS 1.0 x86_64
+  ${c_purple}  ██╔══██║██╔══╝     ██║   ██╔══██║██╔══╝  ██╔══██╗${c_reset}   ${c_bold}Kernel:${c_reset}  ${kernel}
+  ${c_purple}  ██║  ██║███████╗   ██║   ██║  ██║███████╗██║  ██║${c_reset}   ${c_bold}Uptime:${c_reset}  ${uptime}
+  ${c_cyan}  ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝${c_reset}   ${c_bold}WM:${c_reset}      ${wm}
+                                                         ${c_bold}CPU:${c_reset}     ${cpu}
+                                                         ${c_bold}GPU:${c_reset}     ${gpu}
+                                                         ${c_bold}Memory:${c_reset}  ${mem}
+
+EOF
+}
+
+cmd_wifi() {
+  local sub="${1:-status}"
+  case "$sub" in
+    scan)
+      echo -e "${c_cyan}==>${c_reset} Scanning for available Wi-Fi networks..."
+      nmcli -f SSID,SIGNAL,BARS,SECURITY device wifi list
+      ;;
+    connect)
+      local ssid="${2:-}"
+      local pass="${3:-}"
+      if [[ -z "$ssid" ]]; then
+        echo "Usage: aether wifi connect <SSID> [password]"; return 1
+      fi
+      if [[ -n "$pass" ]]; then
+        nmcli device wifi connect "$ssid" password "$pass"
+      else
+        nmcli device wifi connect "$ssid"
+      fi
+      ;;
+    status)
+      nmcli general status
+      nmcli -t -f active,ssid dev wifi | grep '^yes' | cut -d: -f2 | sed 's/^/Connected SSID: /' || echo "No active Wi-Fi connection."
+      ;;
+    *)
+      echo "Usage: aether wifi [status | scan | connect <SSID> <PASSWORD>]"
+      ;;
+  esac
+}
+
+cmd_power() {
+  local action="${1:-menu}"
+  case "$action" in
+    menu)
+      aether-powermenu 2>/dev/null || true
+      ;;
+    lock)
+      hyprlock
+      ;;
+    sleep|suspend)
+      systemctl suspend
+      ;;
+    reboot|restart)
+      systemctl reboot
+      ;;
+    shutdown|poweroff)
+      systemctl poweroff
+      ;;
+    logout)
+      hyprctl dispatch exit 0 || pkill -KILL -u "$USER"
+      ;;
+    *)
+      echo "Usage: aether power [menu | lock | sleep | reboot | shutdown | logout]"
+      ;;
+  esac
+}
+
 main() {
   local cmd="${1:-}"; shift || true
   case "$cmd" in
-    firstboot) cmd_firstboot ;;
-    settings)  cmd_settings "$@" ;;
-    update)    cmd_update ;;
-    clean)     cmd_clean ;;
-    info)      cmd_info ;;
-    doctor)    cmd_doctor ;;
-    drivers)   cmd_drivers ;;
-    snapshot)  cmd_snapshot "$@" ;;
-    config)    cmd_config "$@" ;;
-    ai)        cmd_ai "$@" ;;
+    storage|ssd) cmd_storage "$@" ;;
+    autologin)   cmd_autologin "$@" ;;
+    firstboot)   cmd_firstboot ;;
+    settings)    cmd_settings "$@" ;;
+    wallpaper|bg) cmd_wallpaper "$@" ;;
+    sysinfo|fetch) cmd_sysinfo ;;
+    wifi)        cmd_wifi "$@" ;;
+    power)       cmd_power "$@" ;;
+    update)      cmd_update ;;
+    clean)       cmd_clean ;;
+    info)        cmd_info ;;
+    doctor)      cmd_doctor ;;
+    drivers)     cmd_drivers ;;
+    snapshot)    cmd_snapshot "$@" ;;
+    config)      cmd_config "$@" ;;
+    ai)          cmd_ai "$@" ;;
     -h|--help|help|"") usage ;;
     *) echo "Unknown command: $cmd"; usage; exit 1 ;;
   esac
 }
 
 main "$@"
+

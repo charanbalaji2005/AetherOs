@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AetherOS Cyberpunk Desktop</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+</head>
+<body>
+  <!-- Desktop Background Wallpaper (16:9 Cyberpunk City at Night) -->
+  <div class="wallpaper-container">
+    <img src="../../assets/backgrounds/cyberpunk_city.png" alt="Cyberpunk City" class="wallpaper-img" onerror="this.src='../../assets/backgrounds/default.png'">
+    <div class="wallpaper-overlay"></div>
+  </div>
+
+  <!-- TOP BAR -->
+  <header class="top-bar glass-panel">
+    <div class="top-left">
+      <div class="brand-pill">
+        <span class="brand-logo">󰢻</span>
+        <span class="brand-name">Hyprland</span>
+      </div>
+      <div class="workspace-selector">
+        <button class="ws-btn active" data-ws="1">1</button>
+        <button class="ws-btn" data-ws="2">2</button>
+        <button class="ws-btn" data-ws="3">3</button>
+        <button class="ws-btn" data-ws="4">4</button>
+        <button class="ws-btn" data-ws="5">5</button>
+      </div>
+    </div>
+
+    <div class="top-center">
+      <div class="clock-display" id="clock-display">May 12 | 10:42 PM</div>
+    </div>
+
+    <div class="top-right">
+      <div class="status-item battery"><span class="icon">󰁹</span> <span id="top-battery">100%</span></div>
+      <div class="status-item cpu-stat"><span class="icon">󰍛</span> <span id="top-cpu">23%</span></div>
+      <div class="status-item ram-stat"><span class="icon">󰘚</span> <span id="top-ram">39%</span></div>
+      <div class="status-item volume"><span class="icon">󰕾</span> <span id="top-vol">80%</span></div>
+      <div class="status-item wifi"><span class="icon">󰤨</span></div>
+      <button class="power-btn" id="top-power-btn" title="Power Options">⏻</button>
+    </div>
+  </header>
+
+  <!-- MAIN DESKTOP GRID (Spacious Layout) -->
+  <main class="desktop-main">
+    
+    <!-- LEFT COLUMN WIDGETS -->
+    <section class="left-widgets">
+      
+      <!-- 1. Hyprland Controls Widget -->
+      <div class="widget-card glass-panel hypr-controls-card">
+        <div class="card-header">
+          <h3>Hyprland Controls</h3>
+        </div>
+
+        <div class="controls-list">
+          <div class="control-row">
+            <span class="ctrl-label">Gaps In</span>
+            <div class="stepper">
+              <span class="val-display" id="gaps-in-val">10</span>
+              <button class="step-btn" onclick="stepVal('gaps-in-val', -2)">−</button>
+              <button class="step-btn" onclick="stepVal('gaps-in-val', 2)">+</button>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <span class="ctrl-label">Gaps Out</span>
+            <div class="stepper">
+              <span class="val-display" id="gaps-out-val">20</span>
+              <button class="step-btn" onclick="stepVal('gaps-out-val', -2)">−</button>
+              <button class="step-btn" onclick="stepVal('gaps-out-val', 2)">+</button>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <span class="ctrl-label">Border Size</span>
+            <div class="stepper">
+              <span class="val-display" id="border-size-val">2</span>
+              <button class="step-btn" onclick="stepVal('border-size-val', -1)">−</button>
+              <button class="step-btn" onclick="stepVal('border-size-val', 1)">+</button>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <span class="ctrl-label">Border</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-border" checked onchange="toggleHypr('border')">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="control-row">
+            <span class="ctrl-label">Round Corners</span>
+            <div class="stepper">
+              <label class="toggle-switch small">
+                <input type="checkbox" id="toggle-rounding" checked onchange="toggleHypr('rounding')">
+                <span class="slider"></span>
+              </label>
+              <button class="step-btn" onclick="stepVal('rounding-val', -2)">−</button>
+              <button class="step-btn" onclick="stepVal('rounding-val', 2)">+</button>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <span class="ctrl-label">Floating Switch</span>
+            <span class="keybind-badge">Mod + Shift + Space</span>
+          </div>
+
+          <div class="control-row">
+            <span class="ctrl-label">Focus Follows Mouse</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-follow-mouse" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="control-row">
+            <span class="ctrl-label">Center New Windows</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-center-windows" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <div class="version-tag">
+            <span class="tag-icon">󰢻</span>
+            <span id="hypr-version">Hyprland v0.41.2</span>
+          </div>
+          <div class="action-buttons">
+            <button class="action-btn reload-btn" onclick="reloadHypr()">Reload</button>
+            <button class="action-btn apply-btn" onclick="applyHypr()">Apply</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Music Player Widget -->
+      <div class="widget-card glass-panel music-player-card">
+        <div class="music-body">
+          <div class="album-art-wrap">
+            <img src="../../assets/after_dark.png" alt="Album Art" class="album-art" onerror="this.src='assets/after_dark.png'">
+            <div class="art-glow"></div>
+          </div>
+
+          <div class="track-info">
+            <div class="track-title" id="track-title">After Dark</div>
+            <div class="track-artist" id="track-artist">Mr.Kitty</div>
+
+            <div class="progress-wrap">
+              <span class="time-cur" id="time-cur">1:08</span>
+              <div class="progress-bar-bg" onclick="seekTrack(event)">
+                <div class="progress-bar-fill" id="track-progress" style="width: 24%;"></div>
+              </div>
+              <span class="time-dur" id="time-dur">4:47</span>
+            </div>
+
+            <div class="player-controls">
+              <button class="ctrl-icon-btn shuffle" title="Shuffle">󰒟</button>
+              <button class="ctrl-icon-btn prev" onclick="prevTrack()" title="Previous">󰒮</button>
+              <button class="ctrl-icon-btn play-pause" id="play-pause-btn" onclick="togglePlay()" title="Play/Pause">󰐊</button>
+              <button class="ctrl-icon-btn next" onclick="nextTrack()" title="Next">󰒭</button>
+              <button class="ctrl-icon-btn repeat" title="Repeat">󰑖</button>
+            </div>
+
+            <div class="volume-slider-row">
+              <span class="vol-icon">󰕿</span>
+              <input type="range" min="0" max="100" value="75" class="vol-range" id="vol-slider" oninput="changeVol(this.value)">
+              <span class="vol-icon">󰕾</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT COLUMN WIDGETS -->
+    <section class="right-widgets">
+      
+      <!-- 1. System Overview Widget (Real Dynamic Hardware & Linux Detection) -->
+      <div class="widget-card glass-panel system-overview-card">
+        <div class="card-header">
+          <h3>System Overview</h3>
+        </div>
+
+        <!-- Hardware Section -->
+        <div class="overview-section">
+          <h4 class="section-title">Hardware</h4>
+          
+          <div class="metric-block">
+            <div class="metric-header">
+              <span class="metric-name">CPU</span>
+              <span class="metric-device" id="cpu-model">AMD Ryzen 5 5600X</span>
+              <span class="metric-val" id="cpu-pct">23%</span>
+            </div>
+            <div class="metric-bar"><div class="bar-fill purple" id="cpu-bar" style="width: 23%;"></div></div>
+          </div>
+
+          <div class="metric-block">
+            <div class="metric-header">
+              <span class="metric-name">RAM</span>
+              <span class="metric-device" id="ram-details">6.1 GiB / 15.5 GiB</span>
+              <span class="metric-val" id="ram-pct">39%</span>
+            </div>
+            <div class="metric-bar"><div class="bar-fill purple" id="ram-bar" style="width: 39%;"></div></div>
+          </div>
+
+          <div class="metric-block">
+            <div class="metric-header">
+              <span class="metric-name">GPU</span>
+              <span class="metric-device" id="gpu-model">NVIDIA RTX 3060</span>
+              <span class="metric-val" id="gpu-pct">18%</span>
+            </div>
+            <div class="metric-bar"><div class="bar-fill purple" id="gpu-bar" style="width: 18%;"></div></div>
+          </div>
+        </div>
+
+        <!-- Storage Section -->
+        <div class="overview-section">
+          <h4 class="section-title">Storage</h4>
+          
+          <div class="metric-block">
+            <div class="metric-header">
+              <span class="metric-name">/ (Root)</span>
+              <span class="metric-device" id="root-details">45.2 GiB / 100 GiB</span>
+              <span class="metric-val" id="root-pct">45%</span>
+            </div>
+            <div class="metric-bar"><div class="bar-fill cyan" id="root-bar" style="width: 45%;"></div></div>
+          </div>
+
+          <div class="metric-block">
+            <div class="metric-header">
+              <span class="metric-name">/home</span>
+              <span class="metric-device" id="home-details">212 GiB / 512 GiB</span>
+              <span class="metric-val" id="home-pct">41%</span>
+            </div>
+            <div class="metric-bar"><div class="bar-fill cyan" id="home-bar" style="width: 41%;"></div></div>
+          </div>
+        </div>
+
+        <!-- Network Section -->
+        <div class="overview-section">
+          <h4 class="section-title">Network</h4>
+          
+          <div class="net-row">
+            <div class="net-info">
+              <span class="net-label">Download</span>
+              <span class="net-speed" id="net-down">4.2 KiB/s</span>
+            </div>
+            <canvas class="sparkline-canvas" id="sparkline-rx" width="140" height="28"></canvas>
+          </div>
+
+          <div class="net-row">
+            <div class="net-info">
+              <span class="net-label">Upload</span>
+              <span class="net-speed" id="net-up">1.1 KiB/s</span>
+            </div>
+            <canvas class="sparkline-canvas" id="sparkline-tx" width="140" height="28"></canvas>
+          </div>
+        </div>
+
+        <!-- System Section -->
+        <div class="overview-section no-border">
+          <h4 class="section-title">System</h4>
+          
+          <div class="sys-table">
+            <div class="sys-row"><span class="sys-k">OS</span><span class="sys-v" id="sys-os">Arch Linux x86_64</span></div>
+            <div class="sys-row"><span class="sys-k">Kernel</span><span class="sys-v" id="sys-kernel">6.8.9-arch1-1</span></div>
+            <div class="sys-row"><span class="sys-k">Uptime</span><span class="sys-v" id="sys-uptime">2h 34m</span></div>
+            <div class="sys-row"><span class="sys-k">Packages</span><span class="sys-v" id="sys-packages">1247 (pacman)</span></div>
+            <div class="sys-row"><span class="sys-k">Shell</span><span class="sys-v" id="sys-shell">zsh 5.9</span></div>
+            <div class="sys-row"><span class="sys-k">WM</span><span class="sys-v" id="sys-wm">Hyprland</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Audio Visualizer Widget -->
+      <div class="widget-card glass-panel visualizer-card">
+        <div class="visualizer-bars" id="visualizer-container">
+          <!-- 28 animated dynamic equalizer bars -->
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- BOTTOM FLOATING DOCK -->
+  <footer class="bottom-dock-wrap">
+    <nav class="bottom-dock glass-panel">
+      <button class="dock-item" onclick="launchApp('wofi --show drun')" title="App Launcher">
+        <span class="dock-icon launcher-icon">󰕰</span>
+      </button>
+      <button class="dock-item" onclick="launchApp('kitty')" title="Terminal">
+        <span class="dock-icon terminal-icon">󰞷</span>
+      </button>
+      <button class="dock-item" onclick="launchApp('nautilus')" title="File Manager">
+        <span class="dock-icon files-icon">󰉋</span>
+      </button>
+      <button class="dock-item" onclick="launchApp('firefox')" title="Firefox Browser">
+        <span class="dock-icon browser-icon">󰈹</span>
+      </button>
+      <button class="dock-item" onclick="launchApp('discord')" title="Discord">
+        <span class="dock-icon discord-icon">󰙯</span>
+      </button>
+      <button class="dock-item" onclick="launchApp('spotify')" title="Spotify">
+        <span class="dock-icon spotify-icon">󰓇</span>
+      </button>
+      <button class="dock-item" onclick="launchApp('code')" title="VS Code">
+        <span class="dock-icon vscode-icon">󰨞</span>
+      </button>
+      <button class="dock-item" onclick="launchApp('aether-settings')" title="System Settings">
+        <span class="dock-icon settings-icon">󰒓</span>
+      </button>
+    </nav>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

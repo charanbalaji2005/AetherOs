@@ -9,6 +9,8 @@ KS_GENERATED="$PROJECT_ROOT/build/aetheros.generated.ks"
 
 OUTDIR="$PROJECT_ROOT/build/out"
 ISO_NAME="AetherOS.iso"
+BUILD_TEMP="/var/tmp/aetheros-build-$$"
+LMC_RESULTDIR="$BUILD_TEMP/result"
 
 if [[ $EUID -ne 0 ]]; then
     echo "Run as root:"
@@ -26,7 +28,8 @@ command -v livemedia-creator >/dev/null || {
 }
 
 echo "[1/5] Preparing build directory & cleaning stale locks..."
-rm -rf "$OUTDIR"
+rm -rf "$BUILD_TEMP" 2>/dev/null || true
+mkdir -p "$PROJECT_ROOT/build"
 rm -f /run/user/*/anaconda.pid /run/anaconda.pid /var/run/anaconda.pid /tmp/anaconda.pid 2>/dev/null || true
 pkill -9 anaconda 2>/dev/null || true
 
@@ -38,14 +41,17 @@ echo "[3/5] Building ISO with livemedia-creator..."
 livemedia-creator \
     --ks "$KS_GENERATED" \
     --no-virt \
-    --resultdir "$OUTDIR" \
+    --resultdir "$LMC_RESULTDIR" \
     --project "AetherOS" \
     --make-iso \
     --iso-only \
     --iso-name "$ISO_NAME" \
     --releasever "$RELEASEVER"
 
-echo "[4/5] Creating SHA256 checksum..."
+echo "[4/5] Moving artifacts to output directory & creating SHA256 checksum..."
+mkdir -p "$OUTDIR"
+cp -f "$LMC_RESULTDIR/$ISO_NAME" "$OUTDIR/$ISO_NAME"
+rm -rf "$BUILD_TEMP" 2>/dev/null || true
 sha256sum "$OUTDIR/$ISO_NAME" > "$OUTDIR/$ISO_NAME.sha256"
 
 echo "[5/5] Build complete."

@@ -1,0 +1,2 @@
+# Enable visual asterisk feedback for password prompts in terminal
+Defaults pwfeedback

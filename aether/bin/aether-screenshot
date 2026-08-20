@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# AetherOS Interactive Glassmorphic Screenshot Utility
+set -euo pipefail
+
+SHOTS_DIR="$HOME/Pictures/Screenshots"
+mkdir -p "$SHOTS_DIR"
+TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+OUTPUT_FILE="$SHOTS_DIR/Screenshot_${TIMESTAMP}.png"
+
+MODE="${1:-area}"
+
+if [ "$MODE" = "full" ]; then
+    grim "$OUTPUT_FILE"
+else
+    # Area selection with slurp
+    GEOM=$(slurp -b 0d1117aa -c 9d4eddff -s 56d4dd33 -w 2 2>/dev/null || true)
+    if [ -n "$GEOM" ]; then
+        grim -g "$GEOM" "$OUTPUT_FILE"
+    else
+        exit 0
+    fi
+fi
+
+if [ -f "$OUTPUT_FILE" ]; then
+    wl-copy < "$OUTPUT_FILE"
+    notify-send -a "AetherOS" -i "$OUTPUT_FILE" "Screenshot Captured" "Saved to ~/Pictures/Screenshots and copied to clipboard."
+fi

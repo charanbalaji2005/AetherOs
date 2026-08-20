@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+"""
+AetherOS Desktop Startup Loading Screen (Splash Screen)
+Displays an ultra-sleek, glassmorphic loading screen on Hyprland startup
+while background services, Waybar, portals, and storage mount.
+"""
+
+import sys
+import time
+import tkinter as tk
+from tkinter import ttk
+
+BG_DARK = "#0d1117"
+CARD_BG = "#161b22"
+CYAN_ACCENT = "#56d4dd"
+BLUE_ACCENT = "#7cc7ff"
+TEXT_COLOR = "#e6f1f5"
+TEXT_MUTED = "#8b949e"
+BORDER_COLOR = "#30363d"
+SUCCESS_COLOR = "#57e389"
+
+class AetherSplash(tk.Tk):
+    def __init__(self):
+        super().__init__()
+
+        self.title("AetherOS Splash")
+        self.overrideredirect(True) # Frameless window
+        self.configure(bg=BG_DARK)
+
+        # Window dimensions
+        width = 460
+        height = 280
+        screen_w = self.winfo_screenwidth()
+        screen_h = self.winfo_screenheight()
+        x = (screen_w - width) // 2
+        y = (screen_h - height) // 2
+        self.geometry(f"{width}x{height}+{x}+{y}")
+        self.attributes("-topmost", True)
+
+        # Outer glowing border container
+        self.card = tk.Frame(self, bg=CARD_BG, highlightthickness=1, highlightbackground=CYAN_ACCENT, padx=25, pady=25)
+        self.card.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+
+        # Brand header with emblem
+        header_frame = tk.Frame(self.card, bg=CARD_BG)
+        header_frame.pack(fill=tk.X, pady=(0, 15))
+
+        emblem_lbl = tk.Label(header_frame, text="▲", font=("Segoe UI", 20, "bold"), fg=CYAN_ACCENT, bg="#21262d", padx=10, pady=2)
+        emblem_lbl.pack(side=tk.LEFT, padx=(0, 12))
+
+        title_frame = tk.Frame(header_frame, bg=CARD_BG)
+        title_frame.pack(side=tk.LEFT, fill=tk.BOTH)
+
+        title_lbl = tk.Label(title_frame, text="AetherOS", font=("Segoe UI", 16, "bold"), fg=TEXT_COLOR, bg=CARD_BG)
+        title_lbl.pack(anchor="w")
+
+        subtitle_lbl = tk.Label(title_frame, text="Hyprland Glass Edition", font=("Segoe UI", 9), fg=CYAN_ACCENT, bg=CARD_BG)
+        subtitle_lbl.pack(anchor="w")
+
+        # Step Status Label
+        self.status_lbl = tk.Label(self.card, text="Initializing system services...", font=("Segoe UI", 10), fg=TEXT_COLOR, bg=CARD_BG)
+        self.status_lbl.pack(anchor="w", pady=(10, 8))
+
+        # Canvas Progress Bar (Custom Glassmorphic rounded bar)
+        self.progress_canvas = tk.Canvas(self.card, width=400, height=12, bg="#21262d", highlightthickness=0)
+        self.progress_canvas.pack(fill=tk.X, pady=(0, 10))
+
+        # Percentage label
+        self.pct_lbl = tk.Label(self.card, text="0%", font=("Segoe UI", 9, "bold"), fg=BLUE_ACCENT, bg=CARD_BG)
+        self.pct_lbl.pack(anchor="e")
+
+        # System details footer
+        footer_lbl = tk.Label(self.card, text="Wayland • PipeWire • Btrfs • Linux 6.11", font=("Segoe UI", 8), fg=TEXT_MUTED, bg=CARD_BG)
+        footer_lbl.pack(side=tk.BOTTOM, pady=(10, 0))
+
+        # Startup steps
+        self.steps = [
+            (15, "⚡ Initializing Wayland compositor & portals..."),
+            (35, "🎨 Loading Glassmorphic theme & Waybar..."),
+            (60, "💾 Mounting persistent storage & dotfiles..."),
+            (85, "🚀 Launching background daemons..."),
+            (100, "✨ Desktop Ready! Welcome to AetherOS")
+        ]
+        self.step_idx = 0
+        self.current_pct = 0
+
+        self.after(100, self.animate_progress)
+
+    def draw_bar(self, pct):
+        self.progress_canvas.delete("all")
+        w = self.progress_canvas.winfo_width() or 400
+        h = 12
+        # Track
+        self.progress_canvas.create_rectangle(0, 0, w, h, fill="#21262d", outline="")
+        # Progress fill
+        fill_w = int((w * pct) / 100)
+        if fill_w > 0:
+            self.progress_canvas.create_rectangle(0, 0, fill_w, h, fill=CYAN_ACCENT, outline="")
+
+    def animate_progress(self):
+        if self.step_idx < len(self.steps):
+            target_pct, text = self.steps[self.step_idx]
+            self.status_lbl.config(text=text)
+
+            if self.current_pct < target_pct:
+                self.current_pct += 2
+                self.draw_bar(self.current_pct)
+                self.pct_lbl.config(text=f"{self.current_pct}%")
+                self.after(30, self.animate_progress)
+            else:
+                self.step_idx += 1
+                self.after(150, self.animate_progress)
+        else:
+            self.draw_bar(100)
+            self.pct_lbl.config(text="100%", fg=SUCCESS_COLOR)
+            self.status_lbl.config(text="✨ Desktop Ready!", fg=SUCCESS_COLOR)
+            self.after(400, self.fade_out)
+
+    def fade_out(self):
+        self.destroy()
+
+def main():
+    try:
+        app = AetherSplash()
+        app.mainloop()
+    except Exception:
+        pass
+
+if __name__ == "__main__":
+    main()

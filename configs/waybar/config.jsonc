@@ -1,124 +1,83 @@
-// AetherOS Waybar config
-// Install: mkdir -p ~/.config/waybar && cp config.jsonc style.css ~/.config/waybar/
-//          cp -r scripts ~/.config/waybar/ && chmod +x ~/.config/waybar/scripts/*.sh
+// AetherOS Cyberpunk Waybar config
+// High-end glassmorphic top bar with purple accents and real hardware telemetry
 {
     "layer": "top",
     "position": "top",
-    "height": 34,
-    "margin-top": 6,
-    "margin-left": 10,
-    "margin-right": 10,
-    "spacing": 4,
+    "height": 36,
+    "margin-top": 8,
+    "margin-left": 14,
+    "margin-right": 14,
+    "spacing": 6,
 
-    "modules-left": ["hyprland/workspaces", "hyprland/window"],
+    "modules-left": ["custom/logo", "hyprland/workspaces"],
     "modules-center": ["clock"],
     "modules-right": [
-        "custom/gpu",
+        "battery",
         "cpu",
         "memory",
-        "custom/notifications",
         "pulseaudio",
         "network",
-        "bluetooth",
-        "battery",
-        "custom/quicksettings",
-        "custom/ai",
-        "tray"
+        "custom/power"
     ],
 
-    "hyprland/workspaces": {
-        "format": "{icon}",
-        "on-click": "activate",
-        "format-icons": {
-            "active": "",
-            "default": "",
-            "empty": ""
-        },
-        "persistent-workspaces": { "*": 5 }
+    "custom/logo": {
+        "format": "󰢻 Hyprland",
+        "tooltip-format": "AetherOS Hyprland Desktop",
+        "on-click": "wofi --show drun"
     },
 
-    "hyprland/window": {
-        "format": "{title}",
-        "max-length": 40,
-        "separate-outputs": true
+    "hyprland/workspaces": {
+        "format": "{name}",
+        "on-click": "activate",
+        "all-outputs": true,
+        "persistent-workspaces": {
+            "*": 5
+        }
     },
 
     "clock": {
-        "format": "{:%a %d %b  %H:%M}",
+        "format": "{:%b %d | %I:%M %p}",
         "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
     },
 
+    "battery": {
+        "format": "{capacity}% 󰁹",
+        "format-charging": "{capacity}% 󰂄",
+        "states": { "warning": 20, "critical": 10 },
+        "interval": 5
+    },
+
     "cpu": {
-        "format": " {usage}%",
-        "interval": 3,
+        "format": "{usage}% 󰍛",
+        "interval": 2,
         "tooltip": true
     },
 
     "memory": {
-        "format": " {percentage}%",
+        "format": "{percentage}% 󰘚",
         "tooltip-format": "{used:0.1f}GiB / {total:0.1f}GiB used",
-        "interval": 5
-    },
-
-    "custom/gpu": {
-        "exec": "~/.config/waybar/scripts/gpu.sh",
-        "return-type": "json",
         "interval": 3
     },
 
-    "battery": {
-        "format": "{icon} {capacity}%",
-        "format-icons": ["", "", "", "", ""],
-        "format-charging": " {capacity}%",
-        "states": { "warning": 20, "critical": 10 },
-        "interval": 10
-    },
-
-    "network": {
-        "format-wifi": " {signalStrength}%",
-        "format-ethernet": " Wired",
-        "format-disconnected": "󰤭 Offline",
-        "tooltip-format-wifi": "{essid} ({signalStrength}%)",
-        "on-click": "nm-connection-editor"
-    },
-
-    "bluetooth": {
-        "format": " {status}",
-        "format-connected": " {device_alias}",
-        "format-off": "󰂲",
-        "on-click": "blueman-manager"
-    },
-
     "pulseaudio": {
-        "format": "{icon} {volume}%",
-        "format-muted": " muted",
-        "format-icons": { "default": ["", "", ""] },
+        "format": "{volume}% 󰕾",
+        "format-muted": "muted 󰖁",
         "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
         "on-scroll-up": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+",
         "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
     },
 
-    "custom/notifications": {
-        "exec": "~/.config/waybar/scripts/notifications.sh",
-        "return-type": "json",
-        "interval": 5,
-        "on-click": "dunstctl set-paused toggle",
-        "on-click-right": "dunstctl history-pop"
+    "network": {
+        "format-wifi": "󰤨",
+        "format-ethernet": "󰈀",
+        "format-disconnected": "󰤭",
+        "tooltip-format-wifi": "{essid} ({signalStrength}%)",
+        "on-click": "nm-connection-editor"
     },
 
-    "custom/quicksettings": {
-        "format": "󰢻",
-        "tooltip-format": "Quick Settings",
-        "on-click": "~/.config/waybar/scripts/quicksettings.sh"
-    },
-
-    "custom/ai": {
-        "format": "󰧑 Aether AI",
-        "tooltip-format": "Open Aether AI assistant (Ctrl+Space)",
-        "on-click": "kitty --title aether-ai -e aether ai"
-    },
-
-    "tray": {
-        "spacing": 8
+    "custom/power": {
+        "format": "⏻",
+        "tooltip-format": "Power Options",
+        "on-click": "aether power"
     }
 }

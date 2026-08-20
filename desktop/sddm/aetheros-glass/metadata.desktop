@@ -1,0 +1,11 @@
+[SddmGreeterTheme]
+Name=AetherOS Glass
+Description=Futuristic glassmorphic login theme for AetherOS with Wayland Hyprland support
+Author=AetherOS Team
+Copyright=(c) 2026 AetherOS
+License=MIT
+Type=sddm-theme
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf
+TranslationsDirectory=translations

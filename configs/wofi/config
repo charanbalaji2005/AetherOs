@@ -1,0 +1,21 @@
+# AetherOS Wofi Configuration
+mode=drun
+prompt=Search applications...
+show=drun
+width=520
+height=400
+location=center
+orientation=vertical
+halign=fill
+valign=fill
+filter_rate=100
+allow_markup=true
+no_actions=true
+image_size=32
+insensitive=true
+columns=1
+lines=8
+term=kitty
+hide_scroll=true
+gtk_dark=true
+layer=overlay

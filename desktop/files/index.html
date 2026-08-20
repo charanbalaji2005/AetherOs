@@ -1,0 +1,115 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AetherOS Files</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="files.css" />
+</head>
+<body>
+  <div class="ambient">
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+    <div class="blob blob3"></div>
+  </div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span class="logo-icon">F</span>
+        <span class="logo-text">Aether<strong>Files</strong></span>
+      </div>
+      <nav class="nav-section">
+        <p class="nav-label">Quick Access</p>
+        <a class="nav-item active" id="nav-home" onclick="navigate('~')"><span class="nav-icon">H</span> Home</a>
+        <a class="nav-item" onclick="navigate('~/Desktop')"><span class="nav-icon">D</span> Desktop</a>
+        <a class="nav-item" onclick="navigate('~/Documents')"><span class="nav-icon">D</span> Documents</a>
+        <a class="nav-item" onclick="navigate('~/Downloads')"><span class="nav-icon">D</span> Downloads</a>
+        <a class="nav-item" onclick="navigate('~/Pictures')"><span class="nav-icon">P</span> Pictures</a>
+        <a class="nav-item" onclick="navigate('~/Videos')"><span class="nav-icon">V</span> Videos</a>
+        <a class="nav-item" onclick="navigate('~/Music')"><span class="nav-icon">M</span> Music</a>
+      </nav>
+      <nav class="nav-section">
+        <p class="nav-label">Storage</p>
+        <div id="storage-devices">
+          <div class="storage-skeleton"></div>
+          <div class="storage-skeleton"></div>
+        </div>
+      </nav>
+      <nav class="nav-section">
+        <p class="nav-label">AetherOS Storage</p>
+        <a class="nav-item aether-folder" onclick="navigate('/mnt/aether_storage/AetherOS')"><span class="nav-icon">A</span> All Storage</a>
+        <a class="nav-item" onclick="navigate('/mnt/aether_storage/AetherOS/credentials')"><span class="nav-icon">K</span> Credentials</a>
+        <a class="nav-item" onclick="navigate('/mnt/aether_storage/AetherOS/config')"><span class="nav-icon">C</span> Configs</a>
+        <a class="nav-item" onclick="navigate('/mnt/aether_storage/AetherOS/backups')"><span class="nav-icon">B</span> Backups</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="disk-usage-bar"><div class="disk-used" id="disk-used-bar"></div></div>
+        <div class="disk-label"><span id="disk-used-text">-</span><span id="disk-free-text">free</span></div>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="toolbar">
+        <div class="toolbar-left">
+          <button class="tb-btn" id="btn-back" onclick="goBack()">&#8592;</button>
+          <button class="tb-btn" id="btn-fwd" onclick="goForward()">&#8594;</button>
+          <button class="tb-btn" onclick="reload()">&#8635;</button>
+          <div class="breadcrumb" id="breadcrumb"><span class="crumb" onclick="navigate('~')">Home</span></div>
+        </div>
+        <div class="toolbar-right">
+          <div class="search-box">
+            <span class="search-icon">&#9906;</span>
+            <input type="text" id="search-input" placeholder="Search files..." oninput="filterFiles(this.value)" />
+          </div>
+          <div class="view-toggle">
+            <button class="tb-btn active" id="btn-grid" onclick="setView('grid')">&#9783;</button>
+            <button class="tb-btn" id="btn-list" onclick="setView('list')">&#9776;</button>
+          </div>
+          <select class="sort-select" id="sort-select" onchange="setSortMode(this.value)">
+            <option value="name">Name</option>
+            <option value="size">Size</option>
+            <option value="date">Date</option>
+            <option value="type">Type</option>
+          </select>
+          <button class="tb-btn primary" onclick="openNewFolderDialog()">+ New Folder</button>
+        </div>
+      </header>
+      <div class="storage-hero" id="storage-hero">
+        <div class="hero-title">
+          <span class="hero-icon">&#128190;</span>
+          <div><h2>All Storage Drives</h2><p>Unified view of all mounted storage on this machine</p></div>
+        </div>
+        <div class="drives-strip" id="drives-strip"></div>
+      </div>
+      <div class="files-container"><div class="files-grid" id="files-grid"></div></div>
+      <footer class="statusbar">
+        <span id="status-count">Loading...</span>
+        <span id="status-selection"></span>
+        <span id="status-path"></span>
+      </footer>
+    </main>
+    <div class="details-panel" id="details-panel">
+      <div class="details-header"><span>File Details</span><button class="tb-btn" onclick="closeDetails()">x</button></div>
+      <div class="details-icon" id="det-icon">&#128196;</div>
+      <div class="details-name" id="det-name">-</div>
+      <div class="details-meta" id="det-meta"></div>
+      <div class="details-actions">
+        <button class="det-btn" onclick="openFile()">Open</button>
+        <button class="det-btn danger" onclick="deleteFile()">Delete</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="new-folder-overlay" style="display:none">
+    <div class="modal">
+      <h3>New Folder</h3>
+      <input type="text" id="new-folder-name" placeholder="Folder name..." />
+      <div class="modal-actions">
+        <button class="det-btn" onclick="createFolder()">Create</button>
+        <button class="det-btn" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <script src="files.js"></script>
+</body>
+</html>

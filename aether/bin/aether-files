@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# AetherOS Files Launcher
+# Starts the file manager backend and opens the UI in a frameless browser window
+set -euo pipefail
+
+FM_DIR="/usr/share/aetheros/desktop/files"
+PORT=5998
+
+# Kill any existing instance
+pkill -f "aether_files_server.py" 2>/dev/null || true
+sleep 0.3
+
+# Start backend
+python3 "$FM_DIR/aether_files_server.py" &
+BACKEND_PID=$!
+
+# Wait for server to be ready
+for i in {1..20}; do
+  curl -sf "http://127.0.0.1:$PORT/api/drives" >/dev/null 2>&1 && break
+  sleep 0.25
+done
+
+# Open UI in chromium/firefox as app window
+if command -v chromium-browser &>/dev/null; then
+  chromium-browser --app="http://127.0.0.1:$PORT" \
+    --window-size=1200,780 --window-position=100,80 \
+    --no-first-run --disable-translate --disable-infobars \
+    --title="AetherOS Files" 2>/dev/null
+elif command -v chromium &>/dev/null; then
+  chromium --app="http://127.0.0.1:$PORT" \
+    --window-size=1200,780 --window-position=100,80 \
+    --no-first-run --disable-translate --disable-infobars \
+    --title="AetherOS Files" 2>/dev/null
+elif command -v firefox &>/dev/null; then
+  firefox --new-window "http://127.0.0.1:$PORT" 2>/dev/null
+else
+  xdg-open "http://127.0.0.1:$PORT" 2>/dev/null || true
+fi
+
+kill $BACKEND_PID 2>/dev/null || true

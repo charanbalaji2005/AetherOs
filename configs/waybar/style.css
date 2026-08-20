@@ -1,69 +1,98 @@
-/* AetherOS Waybar theme — matches kitty.conf / hyprland.conf palette */
+/* AetherOS Cyberpunk Glassmorphic Waybar Theme */
 
 * {
-    font-family: "JetBrainsMono Nerd Font";
+    font-family: "Outfit", "JetBrainsMono Nerd Font", "Segoe UI", sans-serif;
     font-size: 13px;
+    font-weight: 500;
     min-height: 0;
+    margin: 0;
+    padding: 0;
 }
 
 window#waybar {
     background: rgba(13, 17, 23, 0.72);
-    border-radius: 14px;
-    border: 1px solid rgba(86, 212, 221, 0.25);
+    border-radius: 10px;
+    border: 1px solid rgba(157, 78, 221, 0.45);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(157, 78, 221, 0.15);
     color: #e6f1f5;
 }
 
-#workspaces {
-    background: transparent;
+#custom-logo {
+    color: #56d4dd;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 0 12px;
     margin: 4px 6px;
+    border-radius: 6px;
+    background: rgba(86, 212, 221, 0.12);
+    border: 1px solid rgba(86, 212, 221, 0.3);
+}
+
+#custom-logo:hover {
+    background: rgba(86, 212, 221, 0.25);
+}
+
+#workspaces {
+    background: rgba(0, 0, 0, 0.35);
+    margin: 4px 4px;
+    padding: 2px 4px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 #workspaces button {
     padding: 0 8px;
-    color: #4c5561;
-    border-radius: 8px;
-}
-
-#workspaces button.active {
-    color: #56d4dd;
-    background: rgba(86, 212, 221, 0.15);
+    color: #8b949e;
+    border-radius: 4px;
+    font-weight: 600;
+    transition: all 0.2s ease;
 }
 
 #workspaces button:hover {
-    background: rgba(86, 212, 221, 0.10);
+    color: #ffffff;
+    background: rgba(157, 78, 221, 0.25);
 }
 
-#window {
-    color: #8be9fd;
-    padding: 0 10px;
+#workspaces button.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, #7b2cbf, #9d4edd);
+    box-shadow: 0 0 10px rgba(157, 78, 221, 0.6);
 }
 
-#clock,
+#clock {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 4px 14px;
+    margin: 4px 0;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 #cpu,
 #memory,
-#custom-gpu,
 #battery,
-#network,
-#bluetooth,
 #pulseaudio,
-#custom-notifications,
-#custom-quicksettings,
-#custom-ai,
-#tray {
+#network {
     padding: 0 10px;
     margin: 4px 2px;
-    border-radius: 8px;
+    border-radius: 6px;
     background: rgba(255, 255, 255, 0.04);
+    color: #e6f1f5;
 }
 
-#custom-ai {
-    background: rgba(86, 212, 221, 0.18);
+#cpu {
+    color: #c77dff;
+}
+
+#memory {
     color: #56d4dd;
-    font-weight: bold;
 }
 
-#custom-ai:hover {
-    background: rgba(86, 212, 221, 0.30);
+#battery {
+    color: #57e389;
 }
 
 #battery.warning {
@@ -74,10 +103,18 @@ window#waybar {
     color: #ff6b6b;
 }
 
-#custom-notifications.has-notifications {
-    color: #56d4dd;
+#custom-power {
+    background: rgba(255, 107, 107, 0.15);
+    border: 1px solid rgba(255, 107, 107, 0.35);
+    color: #ff6b6b;
+    padding: 0 10px;
+    margin: 4px 4px 4px 2px;
+    border-radius: 6px;
+    font-size: 14px;
 }
 
-#tray > .passive {
-    -gtk-icon-effect: dim;
+#custom-power:hover {
+    background: #ff6b6b;
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(255, 107, 107, 0.6);
 }
