@@ -1,0 +1,4 @@
+# /etc/dnf/libdnf5-plugins/actions.d/snapper.actions
+# DNF5 Actions Plugin 5-column format: hook:path:pkg_spec:kmod:command
+pre_transaction::::/usr/local/bin/aether-snapper-pre
+post_transaction::::/usr/local/bin/aether-snapper-post

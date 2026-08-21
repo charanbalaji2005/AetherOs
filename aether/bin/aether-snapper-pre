@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# /usr/local/bin/aether-snapper-pre
+# Takes a pre-transaction snapshot before DNF5 package installation
+set -euo pipefail
+
+DESCRIPTION="${1:-Package Transaction}"
+
+# Check if snapper is configured for root
+if snapper -c root get-config >/dev/null 2>&1; then
+    snapper -c root create -t pre -p -d "DNF5: $DESCRIPTION" > /tmp/snapper-pre-id 2>/dev/null || true
+fi

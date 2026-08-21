@@ -37,14 +37,28 @@ export default function WelcomeWizard() {
   const [loadingText, setLoadingText] = useState("Securing credentials...");
 
   useEffect(() => {
-    // Scan Wi-Fi & Load Timezones on launch
+    // Scan Wi-Fi & Load Worldwide IANA Timezones dynamically
     handleScanWifi();
-    invoke<string[]>("get_timezones")
-      .then((res) => {
-        setTimezones(res);
-        if (res.includes("America/New_York")) setSelectedTz("America/New_York");
-      })
-      .catch(console.error);
+
+    try {
+      if (typeof Intl !== "undefined" && typeof (Intl as any).supportedValuesOf === "function") {
+        const ianaTzs: string[] = (Intl as any).supportedValuesOf("timeZone");
+        setTimezones(ianaTzs);
+        const autoZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (autoZone && ianaTzs.includes(autoZone)) {
+          setSelectedTz(autoZone);
+        }
+      } else {
+        throw new Error("Intl fallback");
+      }
+    } catch {
+      invoke<string[]>("get_timezones")
+        .then((res) => {
+          setTimezones(res);
+          if (res.includes("America/New_York")) setSelectedTz("America/New_York");
+        })
+        .catch(console.error);
+    }
   }, []);
 
   useEffect(() => {
@@ -54,8 +68,8 @@ export default function WelcomeWizard() {
     const messages = [
       "Generating cryptographic keys...",
       "Configuring local timezone...",
+      "Staging Secure Boot MOK signing keys...",
       "Initializing Wayland compositor...",
-      "Staging bootloader...",
       "Rebooting system..."
     ];
     
@@ -119,8 +133,11 @@ export default function WelcomeWizard() {
         },
       });
 
-      // Trigger graceful system reboot to commit new credentials
-      await invoke("reboot_system");
+      // Stage Secure Boot MOK key for proprietary Nvidia modules
+      await invoke("stage_secure_boot_key").catch(() => {});
+
+      // Finalize setup, remove autologin loop, and trigger graceful reboot
+      await invoke("finalize_setup_and_reboot");
     } catch (e) {
       setFinishing(false);
       setErrorMessage(`Setup error: ${e}`);

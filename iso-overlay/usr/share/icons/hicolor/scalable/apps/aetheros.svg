@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 280" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- Left Side Gradient (Azure Blue to Bright Cyan) -->
+    <linearGradient id="aetherLeft" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0066FF" />
+      <stop offset="100%" stop-color="#00D2FF" />
+    </linearGradient>
+
+    <!-- Right Side Gradient (Cyan to Mint Green) -->
+    <linearGradient id="aetherRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00E5FF" />
+      <stop offset="100%" stop-color="#00F59B" />
+    </linearGradient>
+  </defs>
+
+  <!-- Left Stem & Crossbar Base -->
+  <path
+    d="M 150,15
+       C 125,15 108,29 94,57
+       L 18,215
+       C 8,237 16,263 40,263
+       L 85,263
+       C 102,263 116,251 124,233
+       L 150,175
+       L 204,175
+       L 204,119
+       L 150,119
+       L 150,15 Z"
+    fill="url(#aetherLeft)"
+  />
+
+  <!-- Right Stem & Crossbar Cap -->
+  <path
+    d="M 150,15
+       C 175,15 192,29 206,57
+       L 282,215
+       C 292,237 284,263 260,263
+       L 215,263
+       C 198,263 184,251 176,233
+       L 150,175
+       L 96,175
+       L 96,119
+       L 150,119
+       L 150,15 Z"
+    fill="url(#aetherRight)"
+    opacity="0.96"
+  />
+
+  <!-- Central White Node -->
+  <circle cx="150" cy="147" r="16" fill="#FFFFFF" />
+</svg>

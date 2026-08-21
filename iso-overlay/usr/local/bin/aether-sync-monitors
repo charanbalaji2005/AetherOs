@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# /usr/local/bin/aether-sync-monitors
+# Triggered automatically by kanshi when a display is connected or disconnected
+set -euo pipefail
+
+# 1. Give Hyprland 1 second to fully register the new resolution and geometry
+sleep 1
+
+# 2. Reload Waybar
+# Sending SIGUSR2 tells Waybar to refresh its layout across all active outputs
+# without crashing or losing its current state.
+killall -SIGUSR2 waybar 2>/dev/null || true
+
+# 3. Re-apply the current wallpaper to all screens
+# Pywal stores the absolute path of the active wallpaper in a hidden cache file.
+if [ -f "$HOME/.cache/wal/wal" ]; then
+    CURRENT_WALLPAPER=$(cat "$HOME/.cache/wal/wal")
+    if [ -f "$CURRENT_WALLPAPER" ] && command -v swww >/dev/null 2>&1; then
+        swww img "$CURRENT_WALLPAPER" --transition-type none 2>/dev/null || true
+    fi
+elif [ -f "$HOME/.cache/aether-lockscreen.jpg" ] && command -v swww >/dev/null 2>&1; then
+    swww img "$HOME/.cache/aether-lockscreen.jpg" --transition-type none 2>/dev/null || true
+elif [ -f /usr/share/backgrounds/aetheros/sunset_mountains.png ] && command -v swww >/dev/null 2>&1; then
+    swww img /usr/share/backgrounds/aetheros/sunset_mountains.png --transition-type none 2>/dev/null || true
+fi

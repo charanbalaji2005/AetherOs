@@ -1,0 +1,4 @@
+profile default {
+    # Dynamic monitor hot-plug handler for AetherOS
+    exec /usr/local/bin/aether-sync-monitors
+}

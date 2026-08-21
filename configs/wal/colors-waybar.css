@@ -1,0 +1,21 @@
+/* /etc/skel/.cache/wal/colors-waybar.css */
+/* Default Aether OS fallback color palette for first boot */
+@define-color background #0a0a0f;
+@define-color foreground #ffffff;
+@define-color cursor #ffffff;
+@define-color color0 #1a1a1a;
+@define-color color1 #ff3366;
+@define-color color2 #00ff99;
+@define-color color3 #ffcc00;
+@define-color color4 #33ccff;
+@define-color color5 #cc66ff;
+@define-color color6 #00cccc;
+@define-color color7 #e6e6e6;
+@define-color color8 #595959;
+@define-color color9 #ff3366;
+@define-color color10 #00ff99;
+@define-color color11 #ffcc00;
+@define-color color12 #33ccff;
+@define-color color13 #cc66ff;
+@define-color color14 #00cccc;
+@define-color color15 #ffffff;

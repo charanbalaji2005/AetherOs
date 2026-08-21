@@ -1,0 +1,6 @@
+# /etc/default/grub-btrfs/config
+# Fedora-specific grub-btrfs settings
+
+GRUB_BTRFS_GRUB_DIRNAME="/boot/grub2"
+GRUB_BTRFS_MKCONFIG="/usr/sbin/grub2-mkconfig"
+GRUB_BTRFS_SCRIPT_CHECK="grub2-script-check"

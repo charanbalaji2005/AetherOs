@@ -88,6 +88,53 @@ fn set_system_font(font: String, size: u32) -> Result<String, String> {
     }
 }
 
+#[tauri::command]
+fn set_system_wallpaper(path: String) -> Result<String, String> {
+    let output = Command::new("aether-appearance")
+        .args(["wallpaper", &path])
+        .output()
+        .map_err(|e| e.to_string())?;
+
+    if output.status.success() {
+        Ok("Wallpaper and theme colors synchronized across desktop, lockscreen, and SDDM.".into())
+    } else {
+        Err(String::from_utf8_lossy(&output.stderr).to_string())
+    }
+}
+
+#[tauri::command]
+fn set_wallpaper(path: String) -> Result<String, String> {
+    // 1. Set background using swww
+    let _ = Command::new("swww")
+        .args(["img", &path, "--transition-type", "grow"])
+        .output();
+
+    // 2. Generate new color palette with Pywal
+    let _ = Command::new("wal")
+        .args(["-q", "-t", "-i", &path])
+        .output();
+
+    // 3. Send live-reload signal to Waybar
+    let _ = Command::new("killall")
+        .args(["-SIGUSR2", "waybar"])
+        .output();
+
+    // 4. Sync Lock Screen image cache
+    if let Some(home) = dirs::home_dir() {
+        let cache_dir = home.join(".cache");
+        let _ = fs::create_dir_all(&cache_dir);
+        let lock_path = cache_dir.join("aether-lockscreen.jpg");
+        let _ = fs::copy(&path, &lock_path);
+    }
+
+    // 5. Sync SDDM login screen
+    let _ = Command::new("pkexec")
+        .args(["/usr/local/bin/aether-sync-sddm", &path])
+        .output();
+
+    Ok("Wallpaper applied, Pywal colors generated, and Waybar reloaded.".into())
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -96,7 +143,9 @@ fn main() {
             change_system_volume,
             apply_theme,
             set_color_mode,
-            set_system_font
+            set_system_font,
+            set_system_wallpaper,
+            set_wallpaper
         ])
         .run(tauri::generate_context!())
         .expect("error while running Aether Settings application");

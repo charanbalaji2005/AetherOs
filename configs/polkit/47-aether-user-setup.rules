@@ -1,0 +1,9 @@
+/* /etc/polkit-1/rules.d/47-aether-user-setup.rules */
+/* PolicyKit rule for AetherOS Secure User Account Creation */
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.policykit.exec" &&
+        action.lookup("program") == "/usr/local/bin/aether-setup-core" &&
+        subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
+});

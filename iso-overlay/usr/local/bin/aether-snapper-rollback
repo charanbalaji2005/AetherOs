@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# /usr/local/bin/aether-snapper-rollback
+# Restores an AetherOS @ root subvolume from a selected Btrfs snapshot
+set -euo pipefail
+
+if [ -z "${1:-}" ]; then
+    echo "Usage: sudo aether-snapper-rollback <snapshot_number>" >&2
+    exit 1
+fi
+
+SNAP_NUM="$1"
+SNAPSHOT_PATH="/.snapshots/$SNAP_NUM/snapshot"
+
+if [ ! -d "$SNAPSHOT_PATH" ]; then
+    echo "Error: Snapshot $SNAP_NUM does not exist at $SNAPSHOT_PATH." >&2
+    exit 1
+fi
+
+echo "Staging rollback to snapshot #$SNAP_NUM..."
+
+# 1. Identify the physical root partition
+ROOT_DEV=$(findmnt -n -o SOURCE /)
+
+# 2. Mount the top-level Btrfs volume (subvolid=5)
+mkdir -p /mnt/btrfs-top
+mount -t btrfs -o subvolid=5 "$ROOT_DEV" /mnt/btrfs-top
+
+# 3. Backup the current broken root subvolume
+TS=$(date +%Y%m%d_%H%M%S)
+if [ -d /mnt/btrfs-top/@ ]; then
+    mv /mnt/btrfs-top/@ "/mnt/btrfs-top/@_broken_$TS"
+fi
+
+# 4. Clone the read-only snapshot into a new read-write @ subvolume
+btrfs subvolume snapshot "$SNAPSHOT_PATH" /mnt/btrfs-top/@
+
+# 5. Clean up temporary mount
+umount /mnt/btrfs-top
+rmdir /mnt/btrfs-top
+
+echo "Rollback to snapshot #$SNAP_NUM successful."
+echo "Please reboot immediately to load the restored system."

@@ -1,0 +1,9 @@
+/* /etc/polkit-1/rules.d/46-aether-finalize.rules */
+/* PolicyKit rule for AetherOS OOBE Finalization Engine */
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.policykit.exec" &&
+        action.lookup("program") == "/usr/local/bin/aether-finalize-setup" &&
+        subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
+});

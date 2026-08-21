@@ -82,24 +82,59 @@ fn connect_wifi(ssid: String, password: Option<String>) -> Result<String, String
 }
 
 #[tauri::command]
+fn create_system_user(username: String, fullname: String, password: String) -> Result<String, String> {
+    let mut child = std::process::Command::new("pkexec")
+        .arg("/usr/local/bin/aether-setup-core")
+        .arg("create-user")
+        .arg(&username)
+        .arg(&fullname)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to spawn setup script: {}", e))?;
+
+    if let Some(mut stdin) = child.stdin.take() {
+        let _ = std::io::Write::write_all(&mut stdin, format!("{}\n", password).as_bytes());
+    }
+
+    let output = child.wait_with_output().map_err(|e| format!("Failed to wait on child: {}", e))?;
+
+    if output.status.success() {
+        Ok("User account configured securely.".into())
+    } else {
+        let err_msg = String::from_utf8_lossy(&output.stderr);
+        Err(format!("User creation failed: {}", err_msg))
+    }
+}
+
+#[tauri::command]
 fn complete_setup(payload: SetupPayload) -> Result<String, String> {
     let lang = payload.language.unwrap_or_else(|| "en_US.UTF-8".to_string());
     let country = payload.country.unwrap_or_else(|| "us".to_string());
 
-    let output = Command::new("pkexec")
+    let mut child = std::process::Command::new("pkexec")
         .args([
             "/usr/local/bin/aether-setup-core",
             "apply-setup",
             &payload.username,
-            &payload.password,
             &payload.full_name,
             &payload.timezone,
             &payload.hostname,
             &lang,
             &country,
         ])
-        .output()
-        .map_err(|e| e.to_string())?;
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to spawn setup engine: {}", e))?;
+
+    if let Some(mut stdin) = child.stdin.take() {
+        let _ = std::io::Write::write_all(&mut stdin, format!("{}\n", payload.password).as_bytes());
+    }
+
+    let output = child.wait_with_output().map_err(|e| format!("Failed to wait on setup engine: {}", e))?;
 
     if output.status.success() {
         Ok("Setup complete. Initializing desktop...".into())
@@ -131,6 +166,46 @@ fn reboot_system() -> Result<String, String> {
     }
 }
 
+#[tauri::command]
+fn stage_secure_boot_key() -> Result<String, String> {
+    let password = "aether\naether\n";
+
+    let mut child = std::process::Command::new("pkexec")
+        .arg("mokutil")
+        .arg("--import")
+        .arg("/etc/pki/akmods/certs/public_key.der")
+        .stdin(std::process::Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to spawn mokutil: {}", e))?;
+
+    if let Some(mut stdin) = child.stdin.take() {
+        let _ = std::io::Write::write_all(&mut stdin, password.as_bytes());
+    }
+
+    let output = child.wait_with_output().map_err(|e| e.to_string())?;
+
+    if output.status.success() {
+        Ok("Key successfully staged. You must approve it upon reboot.".into())
+    } else {
+        Err("Failed to stage Secure Boot key or key already enrolled.".into())
+    }
+}
+
+#[tauri::command]
+fn finalize_setup_and_reboot() -> Result<String, String> {
+    let output = std::process::Command::new("pkexec")
+        .arg("/usr/local/bin/aether-finalize-setup")
+        .output()
+        .map_err(|e| format!("Failed to spawn finalization process: {}", e))?;
+
+    if output.status.success() {
+        Ok("Setup finalized. System is rebooting...".into())
+    } else {
+        let err_msg = String::from_utf8_lossy(&output.stderr);
+        Err(format!("Finalization error: {}", err_msg))
+    }
+}
+
 fn main() {
     tauri::Builder::default()
         .on_window_event(|event| {
@@ -142,8 +217,11 @@ fn main() {
             get_timezones,
             scan_wifi,
             connect_wifi,
+            create_system_user,
             complete_setup,
-            reboot_system
+            reboot_system,
+            stage_secure_boot_key,
+            finalize_setup_and_reboot
         ])
         .run(tauri::generate_context!())
         .expect("error while running aether setup wizard");

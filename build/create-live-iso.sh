@@ -79,6 +79,19 @@ if [ -f "$PROJECT_ROOT/configs/mime/mimeapps.list" ]; then
     install -Dm644 "$PROJECT_ROOT/configs/mime/mimeapps.list" "$STAGING_DIR/rootfs/etc/skel/.config/mimeapps.list"
 fi
 
+# XDG Desktop Portal Configuration
+if [ -f "$PROJECT_ROOT/configs/xdg-desktop-portal/portals.conf" ]; then
+    mkdir -p "$STAGING_DIR/rootfs/etc/skel/.config/xdg-desktop-portal"
+    install -Dm644 "$PROJECT_ROOT/configs/xdg-desktop-portal/portals.conf" "$STAGING_DIR/rootfs/etc/skel/.config/xdg-desktop-portal/portals.conf"
+fi
+
+# GTK-3.0 and GTK-4.0 Dark Theme Configuration
+if [ -f "$PROJECT_ROOT/configs/gtk/settings.ini" ]; then
+    mkdir -p "$STAGING_DIR/rootfs/etc/skel/.config/gtk-3.0" "$STAGING_DIR/rootfs/etc/skel/.config/gtk-4.0"
+    install -Dm644 "$PROJECT_ROOT/configs/gtk/settings.ini" "$STAGING_DIR/rootfs/etc/skel/.config/gtk-3.0/settings.ini"
+    install -Dm644 "$PROJECT_ROOT/configs/gtk/settings.ini" "$STAGING_DIR/rootfs/etc/skel/.config/gtk-4.0/settings.ini"
+fi
+
 # Fastfetch and Shell configurations
 mkdir -p "$STAGING_DIR/rootfs/etc/skel/.config/fastfetch"
 if [ -d "$PROJECT_ROOT/configs/fastfetch" ]; then
@@ -120,6 +133,9 @@ install -Dm755 "$PROJECT_ROOT/aether/security-center/aether-security-center" "$S
 install -Dm755 "$PROJECT_ROOT/aether/bin/aether-firewall-core" "$STAGING_DIR/rootfs/usr/local/bin/aether-firewall-core"
 install -Dm755 "$PROJECT_ROOT/aether/snapshots/aether-snapshot-manager" "$STAGING_DIR/rootfs/usr/local/bin/aether-snapshots"
 install -Dm755 "$PROJECT_ROOT/aether/bin/aether-snapshot-core" "$STAGING_DIR/rootfs/usr/local/bin/aether-snapshot-core"
+install -Dm755 "$PROJECT_ROOT/aether/bin/aether-snapper-pre"    "$STAGING_DIR/rootfs/usr/local/bin/aether-snapper-pre"
+install -Dm755 "$PROJECT_ROOT/aether/bin/aether-snapper-post"   "$STAGING_DIR/rootfs/usr/local/bin/aether-snapper-post"
+install -Dm755 "$PROJECT_ROOT/aether/bin/aether-snapper-rollback" "$STAGING_DIR/rootfs/usr/local/bin/aether-snapper-rollback"
 install -Dm755 "$PROJECT_ROOT/aether/vpn/aether-vpn-manager" "$STAGING_DIR/rootfs/usr/local/bin/aether-vpn"
 install -Dm755 "$PROJECT_ROOT/aether/settings/aether-settings" "$STAGING_DIR/rootfs/usr/local/bin/aether-settings"
 install -Dm755 "$PROJECT_ROOT/aether/software-center/aether-software-center" "$STAGING_DIR/rootfs/usr/local/bin/aether-software"
@@ -135,6 +151,12 @@ install -Dm644 "$PROJECT_ROOT/configs/systemd/aether-firstboot.service"     "$ST
 install -Dm644 "$PROJECT_ROOT/configs/systemd/aether-battery.service"       "$STAGING_DIR/rootfs/etc/systemd/system/aether-battery.service"
 install -Dm644 "$PROJECT_ROOT/configs/systemd/aether-telemetry.service"     "$STAGING_DIR/rootfs/etc/systemd/system/aether-telemetry.service"
 install -Dm644 "$PROJECT_ROOT/configs/systemd/aether-update-engine.service" "$STAGING_DIR/rootfs/etc/systemd/system/aether-update-engine.service"
+if [ -f "$PROJECT_ROOT/configs/systemd/zram-generator.conf" ]; then
+    install -Dm644 "$PROJECT_ROOT/configs/systemd/zram-generator.conf" "$STAGING_DIR/rootfs/etc/systemd/zram-generator.conf"
+fi
+if [ -f "$PROJECT_ROOT/configs/grub/grub-btrfs.conf" ]; then
+    install -Dm644 "$PROJECT_ROOT/configs/grub/grub-btrfs.conf" "$STAGING_DIR/rootfs/etc/default/grub-btrfs/config"
+fi
 
 mkdir -p "$STAGING_DIR/rootfs/usr/share/aetheros/desktop/widgets"
 cp -r "$PROJECT_ROOT/desktop/widgets/"* "$STAGING_DIR/rootfs/usr/share/aetheros/desktop/widgets/"

@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # /usr/local/bin/aether-sync-sddm
-# Syncs user desktop wallpaper to the SDDM login screen
 set -euo pipefail
 
 NEW_WALLPAPER="${1:-}"

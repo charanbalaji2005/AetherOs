@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# /usr/local/bin/aether-finalize-setup
+# Finalizes first-boot OOBE setup, removes autologin loop, and reboots system
+set -euo pipefail
+
+echo "Finalizing Aether OS installation..."
+
+# 1. Remove the SDDM autologin configuration to prevent the infinite setup loop
+if [ -f /etc/sddm.conf.d/autologin.conf ]; then
+    rm -f /etc/sddm.conf.d/autologin.conf
+fi
+
+# 2. Lock or disable the temporary setup user password
+passwd -l aether-setup 2>/dev/null || true
+
+# 3. Flush disk buffers
+sync
+
+# 4. Trigger an immediate system reboot
+systemctl reboot

@@ -1,0 +1,9 @@
+/* PolicyKit rule for AetherOS Snapper Rollback Engine */
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.policykit.exec" &&
+        (action.lookup("program") == "/usr/local/bin/aether-snapper-rollback" ||
+         action.lookup("program") == "/usr/local/bin/aether-snapshot-core") &&
+        subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
+});
