@@ -169,7 +169,10 @@ class AetherSettingsApp(tk.Tk):
                 messagebox.showwarning("AetherOS", f"Wallpaper not found at {path}")
 
         def change_wallpaper():
-            filename = filedialog.askopenfilename(title="Select Wallpaper", filetypes=[("Image Files", "*.png *.jpg *.jpeg")])
+            filename = filedialog.askopenfilename(
+                title="Select Wallpaper",
+                filetypes=[("Image Files", "*.png *.jpg *.jpeg *.webp *.avif"), ("All Files", "*.*")]
+            )
             if filename:
                 set_wallpaper_path(filename)
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import AppearanceSettings from "./Appearance";
 import { 
   Monitor, 
   Wifi, 
@@ -293,28 +294,8 @@ export default function App() {
 
           {/* 6. Appearance Panel */}
           {activeTab === "Appearance" && (
-            <div className="bg-[#13192b] border border-[#1b2238] p-6 rounded-2xl shadow-xl space-y-6">
-              <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                <Palette className="w-4 h-4 text-[#00f0ff]" /> Desktop Themes & Wallpaper
-              </h3>
-              
-              <div>
-                <p className="text-xs text-slate-400 font-medium mb-3">Active Wallpaper</p>
-                <div className="grid grid-cols-3 gap-4">
-                  {["cyberpunk_city.png", "after_dark.png", "chainsaw_man.png"].map((bg) => (
-                    <button
-                      key={bg}
-                      onClick={() => setSelectedWallpaper(bg)}
-                      className={`p-3 rounded-xl border text-center transition ${selectedWallpaper === bg ? "border-[#00f0ff] bg-[#00f0ff]/10" : "border-[#1b2238] bg-[#0a0e1a]"}`}
-                    >
-                      <div className="h-20 bg-slate-800 rounded-lg mb-2 flex items-center justify-center text-xs text-slate-500 font-mono">
-                        {bg}
-                      </div>
-                      <p className="text-xs font-semibold text-slate-300">{bg.replace(".png", "")}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <div className="bg-[#13192b] border border-[#1b2238] rounded-2xl shadow-xl overflow-hidden">
+              <AppearanceSettings />
             </div>
           )}
 

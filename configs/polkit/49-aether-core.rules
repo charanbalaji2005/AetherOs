@@ -1,0 +1,21 @@
+/* /etc/polkit-1/rules.d/49-aether-core.rules */
+/* Unified PolicyKit Authorization Rule for AetherOS System Engines */
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.policykit.exec" &&
+        (action.lookup("program") == "/usr/local/bin/aether-setup-core" ||
+         action.lookup("program") == "/usr/local/bin/aether-finalize-setup" ||
+         action.lookup("program") == "/usr/local/bin/aether-snapper-rollback" ||
+         action.lookup("program") == "/usr/local/bin/aether-sync-sddm" ||
+         action.lookup("program") == "/usr/local/bin/aether-driver-core" ||
+         action.lookup("program") == "/usr/local/bin/aether-firewall-core" ||
+         action.lookup("program") == "/usr/local/bin/aether-vpn-core" ||
+         action.lookup("program") == "/usr/local/bin/aether-backup-core" ||
+         action.lookup("program") == "/usr/local/bin/aether-game-optim" ||
+         action.lookup("program") == "/usr/bin/mokutil" ||
+         action.lookup("program") == "/usr/sbin/timedatectl" ||
+         action.lookup("program") == "/usr/bin/fedora-third-party" ||
+         action.lookup("program") == "/usr/bin/dnf") &&
+        subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
+});

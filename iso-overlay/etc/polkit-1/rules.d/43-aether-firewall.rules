@@ -1,0 +1,8 @@
+/* PolicyKit rule for AetherOS Security & Firewall Engine */
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.policykit.exec" &&
+        action.lookup("program") == "/usr/local/bin/aether-firewall-core" &&
+        subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
+});

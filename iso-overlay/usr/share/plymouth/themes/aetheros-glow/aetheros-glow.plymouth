@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=AetherOS Glow
+Description=Next-Gen Glassmorphic Boot Splash for AetherOS
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/aetheros-glow
+ScriptFile=/usr/share/plymouth/themes/aetheros-glow/aetheros-glow.script

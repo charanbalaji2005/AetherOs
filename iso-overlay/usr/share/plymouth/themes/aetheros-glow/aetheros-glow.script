@@ -1,0 +1,183 @@
+# AetherOS Glow Plymouth Boot Splash Script
+# Glassmorphic Theme with glowing logo, circular cyber spinner, and dynamic progress bar
+
+# --- Screen Geometry ---
+screen_width = Window.GetWidth();
+screen_height = Window.GetHeight();
+
+# --- Background ---
+bg_image = Image("background.png");
+resized_bg = bg_image.Scale(screen_width, screen_height);
+bg_sprite = Sprite(resized_bg);
+bg_sprite.SetZ(-100);
+bg_sprite.SetX(0);
+bg_sprite.SetY(0);
+
+# --- Logo & Glow ---
+logo_orig = Image("logo.png");
+logo_sprite = Sprite(logo_orig);
+logo_width = logo_orig.GetWidth();
+logo_height = logo_orig.GetHeight();
+logo_x = (screen_width - logo_width) / 2;
+logo_y = (screen_height / 2) - 100;
+logo_sprite.SetX(logo_x);
+logo_sprite.SetY(logo_y);
+logo_sprite.SetZ(10);
+
+# --- Animated Spinner (24 frames) ---
+spinner_frames = [];
+for (i = 0; i < 24; i++) {
+    spinner_frames[i] = Image("spinner-" + i + ".png");
+}
+spinner_sprite = Sprite();
+spinner_x = (screen_width - 64) / 2;
+spinner_y = logo_y + logo_height + 30;
+spinner_sprite.SetX(spinner_x);
+spinner_sprite.SetY(spinner_y);
+spinner_sprite.SetZ(20);
+
+# --- Progress Bar & Container ---
+progress_box_image = Image("progress_box.png");
+progress_box_sprite = Sprite(progress_box_image);
+box_width = progress_box_image.GetWidth();
+box_height = progress_box_image.GetHeight();
+box_x = (screen_width - box_width) / 2;
+box_y = spinner_y + 80;
+progress_box_sprite.SetX(box_x);
+progress_box_sprite.SetY(box_y);
+progress_box_sprite.SetZ(15);
+
+progress_bar_image = Image("progress_bar.png");
+progress_bar_sprite = Sprite();
+progress_bar_sprite.SetX(box_x);
+progress_bar_sprite.SetY(box_y);
+progress_bar_sprite.SetZ(16);
+
+# --- Status / Message Display ---
+status_sprite = Sprite();
+status_sprite.SetZ(30);
+
+fun update_status_text(text) {
+    if (text == "") {
+        status_sprite.SetImage(Image());
+        return;
+    }
+    txt_img = Image.Text(text, 0.54, 0.83, 0.87, 1.0, "Sans 11");
+    status_sprite.SetImage(txt_img);
+    status_sprite.SetX((screen_width - txt_img.GetWidth()) / 2);
+    status_sprite.SetY(box_y + 25);
+}
+
+# --- Password Prompt Dialog ---
+lock_image = Image("lock.png");
+lock_sprite = Sprite(lock_image);
+lock_sprite.SetZ(40);
+lock_sprite.SetOpacity(0);
+
+bullet_image = Image("bullet.png");
+bullet_sprites = [];
+prompt_sprite = Sprite();
+prompt_sprite.SetZ(40);
+
+fun display_password_callback(prompt, bullets) {
+    lock_sprite.SetX((screen_width - 32) / 2);
+    lock_sprite.SetY(logo_y + logo_height + 20);
+    lock_sprite.SetOpacity(1);
+
+    # Hide spinner during password prompt
+    spinner_sprite.SetOpacity(0);
+
+    # Prompt text
+    p_img = Image.Text(prompt, 0.90, 0.94, 0.96, 1.0, "Sans 12");
+    prompt_sprite.SetImage(p_img);
+    prompt_sprite.SetX((screen_width - p_img.GetWidth()) / 2);
+    prompt_sprite.SetY(logo_y + logo_height + 60);
+
+    # Clear old bullets
+    for (i = 0; i < 30; i++) {
+        if (bullet_sprites[i]) bullet_sprites[i].SetOpacity(0);
+    }
+
+    # Render active bullets
+    bullet_start_x = (screen_width - (bullets * 18)) / 2;
+    for (i = 0; i < bullets; i++) {
+        if (!bullet_sprites[i]) {
+            bullet_sprites[i] = Sprite(bullet_image);
+            bullet_sprites[i].SetZ(50);
+        }
+        bullet_sprites[i].SetX(bullet_start_x + (i * 18));
+        bullet_sprites[i].SetY(logo_y + logo_height + 95);
+        bullet_sprites[i].SetOpacity(1);
+    }
+}
+
+fun display_normal_callback() {
+    lock_sprite.SetOpacity(0);
+    prompt_sprite.SetImage(Image());
+    spinner_sprite.SetOpacity(1);
+    for (i = 0; i < 30; i++) {
+        if (bullet_sprites[i]) bullet_sprites[i].SetOpacity(0);
+    }
+}
+
+Plymouth.SetDisplayPasswordFunction(display_password_callback);
+Plymouth.SetDisplayNormalFunction(display_normal_callback);
+
+# --- Animation & Refresh Cycle ---
+global.time = 0;
+global.frame_index = 0;
+global.current_progress = 0;
+
+fun refresh_callback() {
+    global.time += 0.05;
+
+    # 1. Update spinner animation (approx 20 FPS rotation)
+    global.frame_index = (global.frame_index + 1) % 24;
+    spinner_sprite.SetImage(spinner_frames[global.frame_index]);
+
+    # 2. Breathing / pulsating glow on AetherOS logo (opacity 0.85 -> 1.0)
+    glow_alpha = 0.90 + 0.10 * Math.Sin(global.time * 2.0);
+    logo_sprite.SetOpacity(glow_alpha);
+}
+
+Plymouth.SetRefreshFunction(refresh_callback);
+
+# --- Boot Progress Callback ---
+fun boot_progress_callback(duration, progress) {
+    global.current_progress = progress;
+    if (progress > 1.0) progress = 1.0;
+    if (progress < 0.0) progress = 0.0;
+
+    target_width = Math.Int(box_width * progress);
+    if (target_width > 0) {
+        cropped_bar = progress_bar_image.Crop(0, 0, target_width, box_height);
+        progress_bar_sprite.SetImage(cropped_bar);
+    }
+}
+
+Plymouth.SetBootProgressFunction(boot_progress_callback);
+
+# --- Status Update Callback ---
+fun update_status_callback(status) {
+    update_status_text(status);
+}
+
+Plymouth.SetUpdateStatusFunction(update_status_callback);
+
+# --- Message Callback ---
+fun message_callback(text) {
+    update_status_text(text);
+}
+
+Plymouth.SetMessageFunction(message_callback);
+
+# --- Quit / Fade Out Transition ---
+fun quit_callback() {
+    logo_sprite.SetOpacity(0);
+    spinner_sprite.SetOpacity(0);
+    progress_box_sprite.SetOpacity(0);
+    progress_bar_sprite.SetOpacity(0);
+    status_sprite.SetOpacity(0);
+}
+
+Plymouth.SetQuitFunction(quit_callback);

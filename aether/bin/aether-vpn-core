@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# /usr/local/bin/aether-vpn-core
+# AetherOS Encrypted VPN & WireGuard Manager
+set -euo pipefail
+
+ACTION="${1:-status}"
+
+case "$ACTION" in
+    status)
+        CONNECTED=false
+        ACTIVE_VPN="None"
+        IP=""
+
+        # Check WireGuard active interfaces
+        if command -v wg >/dev/null 2>&1; then
+            WG_OUT=$(wg show interfaces 2>/dev/null || echo "")
+            if [ -n "$WG_OUT" ]; then
+                CONNECTED=true
+                ACTIVE_VPN="$WG_OUT"
+            fi
+        fi
+
+        # Check NetworkManager VPN
+        if [ "$CONNECTED" = false ]; then
+            NM_VPN=$(nmcli -t -f TYPE,NAME connection show --active 2>/dev/null | grep -E '^vpn:|^wireguard:' | cut -d: -f2 | head -n 1 || echo "")
+            if [ -n "$NM_VPN" ]; then
+                CONNECTED=true
+                ACTIVE_VPN="$NM_VPN"
+            fi
+        fi
+
+        echo "{\"connected\": $CONNECTED, \"active_vpn\": \"$ACTIVE_VPN\"}"
+        ;;
+    list)
+        CONFIGS=()
+        if [ -d /etc/wireguard ]; then
+            for f in /etc/wireguard/*.conf; do
+                [ -e "$f" ] || continue
+                name=$(basename "$f" .conf)
+                CONFIGS+=("\"$name\"")
+            done
+        fi
+        JOINED=$(IFS=,; echo "${CONFIGS[*]}")
+        echo "{\"configs\": [$JOINED]}"
+        ;;
+    connect)
+        IFACE="${2:-wg0}"
+        if [ -f "/etc/wireguard/${IFACE}.conf" ]; then
+            wg-quick up "$IFACE"
+            echo "{\"status\": \"Connected to WireGuard $IFACE\"}"
+        else
+            nmcli connection up "$IFACE" || true
+            echo "{\"status\": \"Connected to $IFACE\"}"
+        fi
+        ;;
+    disconnect)
+        IFACE="${2:-wg0}"
+        if [ -f "/etc/wireguard/${IFACE}.conf" ]; then
+            wg-quick down "$IFACE" || true
+            echo "{\"status\": \"Disconnected from WireGuard $IFACE\"}"
+        else
+            nmcli connection down "$IFACE" || true
+            echo "{\"status\": \"Disconnected from $IFACE\"}"
+        fi
+        ;;
+    *)
+        echo "Usage: $0 {status|list|connect <iface>|disconnect <iface>}"
+        exit 1
+        ;;
+esac

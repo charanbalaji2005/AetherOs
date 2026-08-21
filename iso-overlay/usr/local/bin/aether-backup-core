@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# /usr/local/bin/aether-backup-core
+# AetherOS Btrfs User Data & Home Backup Engine
+set -euo pipefail
+
+ACTION="${1:-status}"
+
+case "$ACTION" in
+    status)
+        SNAP_COUNT=0
+        FREE_SPACE="0G"
+        if [ -d "/.snapshots" ]; then
+            SNAP_COUNT=$(btrfs subvolume list /.snapshots 2>/dev/null | grep "home-backup" | wc -l || echo 0)
+            FREE_SPACE=$(df -h / | awk 'NR==2 {print $4}')
+        fi
+        echo "{\"snapshot_count\": $SNAP_COUNT, \"free_space\": \"$FREE_SPACE\"}"
+        ;;
+    create)
+        NAME="${2:-manual}"
+        DATE=$(date +%Y%m%d_%H%M%S)
+        SNAP_PATH="/.snapshots/home-backup-${NAME}-${DATE}"
+        mkdir -p /.snapshots
+        btrfs subvolume snapshot -r /home "$SNAP_PATH"
+        echo "{\"status\": \"Snapshot created: $SNAP_PATH\"}"
+        ;;
+    list)
+        SNAPS=()
+        if [ -d "/.snapshots" ]; then
+            for dir in /.snapshots/home-backup-*; do
+                [ -d "$dir" ] || continue
+                name=$(basename "$dir")
+                SNAPS+=("\"$name\"")
+            done
+        fi
+        JOINED=$(IFS=,; echo "${SNAPS[*]}")
+        echo "{\"backups\": [$JOINED]}"
+        ;;
+    *)
+        echo "Usage: $0 {status|create <name>|list}"
+        exit 1
+        ;;
+esac

@@ -20,6 +20,10 @@ if [ -f "$HOME/.cache/wal/wal" ]; then
     fi
 elif [ -f "$HOME/.cache/aether-lockscreen.jpg" ] && command -v swww >/dev/null 2>&1; then
     swww img "$HOME/.cache/aether-lockscreen.jpg" --transition-type none 2>/dev/null || true
-elif [ -f /usr/share/backgrounds/aetheros/sunset_mountains.png ] && command -v swww >/dev/null 2>&1; then
-    swww img /usr/share/backgrounds/aetheros/sunset_mountains.png --transition-type none 2>/dev/null || true
+elif [ -f /usr/share/backgrounds/aetheros/default.webp ] && command -v swww >/dev/null 2>&1; then
+    swww img /usr/share/backgrounds/aetheros/default.webp --transition-type none 2>/dev/null || true
+elif [ -f /usr/share/backgrounds/aetheros/default.jpg ] && command -v swww >/dev/null 2>&1; then
+    swww img /usr/share/backgrounds/aetheros/default.jpg --transition-type none 2>/dev/null || true
+elif [ -f /usr/share/backgrounds/aetheros/sunset_mountains.jpg ] && command -v swww >/dev/null 2>&1; then
+    swww img /usr/share/backgrounds/aetheros/sunset_mountains.jpg --transition-type none 2>/dev/null || true
 fi

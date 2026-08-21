@@ -1,0 +1,17 @@
+/* AetherOS Polkit Rules: Allow Aether Control Center and Services passwordless access to hardware & system settings */
+polkit.addRule(function(action, subject) {
+    if (subject.isInGroup("wheel")) {
+        if (
+            action.id.indexOf("org.freedesktop.power-profiles-daemon.") === 0 ||
+            action.id.indexOf("org.freedesktop.login1.") === 0 ||
+            action.id.indexOf("org.freedesktop.timedate1.") === 0 ||
+            action.id.indexOf("org.freedesktop.locale1.") === 0 ||
+            action.id.indexOf("org.freedesktop.hostname1.") === 0 ||
+            action.id.indexOf("org.freedesktop.NetworkManager.") === 0 ||
+            action.id.indexOf("org.freedesktop.packagekit.") === 0 ||
+            action.id.indexOf("com.aetheros.") === 0
+        ) {
+            return polkit.Result.YES;
+        }
+    }
+});

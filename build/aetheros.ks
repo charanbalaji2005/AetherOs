@@ -113,6 +113,16 @@ flatpak
 snapper
 grub-btrfs
 libdnf5-plugin-actions
+fedora-third-party
+fedora-workstation-repositories
+
+# Security, VPN & Gaming Daemons
+firewalld
+wireguard-tools
+NetworkManager-wireguard
+NetworkManager-openvpn
+gamemode
+mangohud
 %end
 
 

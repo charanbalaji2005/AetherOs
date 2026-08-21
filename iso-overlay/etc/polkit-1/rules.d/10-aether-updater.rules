@@ -1,0 +1,11 @@
+/* AetherOS Update Engine Polkit Policy */
+polkit.addRule(function(action, subject) {
+    if (subject.isInGroup("wheel")) {
+        if (
+            action.id.indexOf("com.aetheros.updateengine.") === 0 ||
+            action.id.indexOf("com.aetheros.UpdateEngine.") === 0
+        ) {
+            return polkit.Result.YES;
+        }
+    }
+});

@@ -1,0 +1,62 @@
+/* AetherOS Cyber-Glass Calamares QSS Stylesheet */
+
+QWidget {
+    background-color: #0a0e1a;
+    color: #e6f1f5;
+    font-family: "Outfit", "Segoe UI", sans-serif;
+    font-size: 13px;
+}
+
+QTreeView, QListView, QTableView {
+    background-color: #13192b;
+    border: 1px solid #1b2238;
+    border-radius: 8px;
+    selection-background-color: rgba(0, 240, 255, 0.2);
+    selection-color: #00f0ff;
+}
+
+QPushButton {
+    background-color: #13192b;
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    border-radius: 8px;
+    padding: 8px 20px;
+    color: #e6f1f5;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: rgba(0, 240, 255, 0.2);
+    border: 1px solid #00f0ff;
+    color: #ffffff;
+}
+
+QPushButton:pressed {
+    background-color: #00f0ff;
+    color: #0a0e1a;
+}
+
+QLineEdit, QComboBox {
+    background-color: #13192b;
+    border: 1px solid #1b2238;
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: #ffffff;
+    selection-background-color: #00f0ff;
+}
+
+QLineEdit:focus, QComboBox:focus {
+    border: 1px solid #00f0ff;
+}
+
+QProgressBar {
+    background-color: #13192b;
+    border: 1px solid #1b2238;
+    border-radius: 6px;
+    text-align: center;
+    color: #ffffff;
+}
+
+QProgressBar::chunk {
+    background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #00f0ff, stop:1 #a855f7);
+    border-radius: 5px;
+}

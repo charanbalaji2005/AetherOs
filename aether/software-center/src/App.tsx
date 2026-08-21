@@ -5,140 +5,265 @@ interface AppRecord {
   app_id: string;
   name: string;
   description: string;
+  source: string; // "flathub" | "dnf"
+  category: string;
+  icon?: string;
+  is_installed: boolean;
 }
 
-export default function SoftwareCenter() {
-  const [installed, setInstalled] = useState<AppRecord[]>([]);
-  const [searchResults, setSearchResults] = useState<AppRecord[]>([]);
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("Loading installed applications...");
-  const [isProcessing, setIsProcessing] = useState(false);
+const CATEGORIES = [
+  { id: "all", label: "Featured & All", icon: "✨" },
+  { id: "development", label: "Development", icon: "💻" },
+  { id: "gaming", label: "Gaming", icon: "🎮" },
+  { id: "media", label: "Creative & Media", icon: "🎨" },
+  { id: "browsers", label: "Web Browsers", icon: "🌐" },
+  { id: "productivity", label: "Productivity", icon: "📝" },
+  { id: "utilities", label: "Utilities", icon: "⚡" },
+  { id: "installed", label: "Installed", icon: "📦" },
+];
 
-  const fetchInstalled = async () => {
+export default function SoftwareCenter() {
+  const [apps, setApps] = useState<AppRecord[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("Repositories synchronized.");
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  const loadCatalog = async () => {
     try {
-      const apps = await invoke<AppRecord[]>("get_installed_apps");
-      setInstalled(apps);
-      setStatus("System packages and Flatpaks up to date.");
-    } catch (e) {
-      setStatus(`Error: ${e}`);
+      if (selectedCategory === "installed") {
+        const res = await invoke<AppRecord[]>("get_installed_apps");
+        setApps(res);
+      } else {
+        const res = await invoke<AppRecord[]>("get_featured_catalog");
+        setApps(res);
+      }
+    } catch (err) {
+      setStatus(`Failed to load catalog: ${err}`);
     }
   };
 
   useEffect(() => {
-    fetchInstalled();
-  }, []);
+    loadCatalog();
+  }, [selectedCategory]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) {
-      setSearchResults([]);
+      loadCatalog();
       return;
     }
-
-    setStatus(`Searching Flathub repository for "${query}"...`);
+    setStatus(`Searching repositories for "${query}"...`);
     try {
-      const results = await invoke<AppRecord[]>("search_apps", { query });
-      setSearchResults(results);
-      setStatus(results.length > 0 ? `Found ${results.length} applications.` : "No applications found.");
+      const res = await invoke<AppRecord[]>("search_apps", { query });
+      setApps(res);
+      setStatus(`Found ${res.length} matching packages.`);
     } catch (err) {
       setStatus(`Search failed: ${err}`);
     }
   };
 
-  const handleAction = async (app_id: string, action: "install" | "uninstall") => {
-    setIsProcessing(true);
-    setStatus(`${action === "install" ? "Installing" : "Removing"} ${app_id}...`);
+  const handleAction = async (app: AppRecord, action: "install" | "uninstall" | "launch") => {
+    setProcessingId(app.app_id);
+    if (action === "launch") {
+      try {
+        await invoke("launch_app", { appId: app.app_id, source: app.source });
+        setStatus(`Launched ${app.name}.`);
+      } catch (err) {
+        setStatus(`Launch error: ${err}`);
+      } finally {
+        setProcessingId(null);
+      }
+      return;
+    }
 
+    setStatus(`${action === "install" ? "Installing" : "Removing"} ${app.name}...`);
     try {
-      const res = await invoke<string>(`${action}_app`, { appId: app_id });
+      const res = await invoke<string>(`${action}_app`, {
+        appId: app.app_id,
+        source: app.source,
+      });
       setStatus(res);
-      await fetchInstalled();
+      await loadCatalog();
     } catch (err) {
-      setStatus(`Action failed: ${err}`);
+      setStatus(`Operation failed: ${err}`);
     } finally {
-      setIsProcessing(false);
+      setProcessingId(null);
     }
   };
 
-  const isInstalled = (id: string) => installed.some((app) => app.app_id === id);
-  const displayList = query ? searchResults : installed;
+  const filteredApps = apps.filter((app) => {
+    if (selectedCategory === "all" || selectedCategory === "installed") return true;
+    return app.category.toLowerCase() === selectedCategory;
+  });
 
   return (
-    <div className="p-8 text-gray-100 bg-[#0a0a0f] min-h-screen font-sans select-none flex flex-col">
-      {/* Header */}
-      <div className="mb-6 flex justify-between items-start">
-        <div>
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">📦</span>
-            <h1 className="text-2xl font-bold text-blue-400">Aether Software Center</h1>
+    <div className="min-h-screen bg-[#07090e] text-slate-100 font-sans select-none flex flex-col antialiased">
+      {/* Top Glass Header */}
+      <header className="px-8 py-6 border-b border-cyan-500/10 bg-[#0c1017]/80 backdrop-blur-xl sticky top-0 z-30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-emerald-400 p-0.5 shadow-[0_0_20px_rgba(6,182,212,0.3)]">
+            <div className="w-full h-full bg-[#07090e] rounded-[14px] flex items-center justify-center text-2xl">
+              📦
+            </div>
           </div>
-          <p className="text-xs text-gray-400 mt-1">{status}</p>
+          <div>
+            <h1 className="text-xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400">
+              Aether Software Store
+            </h1>
+            <p className="text-xs text-slate-400 font-mono mt-0.5">{status}</p>
+          </div>
         </div>
-        <button
-          onClick={fetchInstalled}
-          disabled={isProcessing}
-          className="text-xs text-gray-400 hover:text-blue-400 border border-gray-800 px-3 py-1.5 rounded-lg bg-gray-900/60 transition disabled:opacity-50"
-        >
-          ↻ Refresh Installed
-        </button>
-      </div>
 
-      {/* Search Input Bar */}
-      <form onSubmit={handleSearch} className="flex gap-3 mb-6">
-        <input
-          type="text"
-          className="bg-gray-900/80 border border-gray-800 px-4 py-2.5 rounded-xl flex-1 outline-none focus:border-blue-500 transition-colors text-sm text-gray-200 placeholder-gray-500"
-          placeholder="Search Flathub for applications (e.g. Spotify, VS Code, Discord, Blender)..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <button
-          type="submit"
-          disabled={isProcessing}
-          className="bg-blue-500/20 text-blue-400 border border-blue-500/50 px-6 py-2.5 rounded-xl hover:bg-blue-500 hover:text-gray-950 font-semibold text-sm transition shadow-md active:scale-95 disabled:opacity-50"
-        >
-          Search
-        </button>
-      </form>
-
-      {/* List Header */}
-      <h2 className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-3">
-        {query ? `Search Results (${searchResults.length})` : `Installed Applications (${installed.length})`}
-      </h2>
-
-      {/* Application Cards List */}
-      <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-        {displayList.map((app) => (
-          <div
-            key={app.app_id}
-            className="flex justify-between items-center bg-gray-900/40 p-5 rounded-2xl border border-gray-800 hover:border-gray-700 transition backdrop-blur-md"
+        {/* Global Search Bar */}
+        <form onSubmit={handleSearch} className="flex items-center gap-2 max-w-md w-full">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search DNF & Flathub packages..."
+              className="w-full bg-[#121824]/90 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-cyan-400 transition shadow-inner"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  loadCatalog();
+                }}
+                className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-200"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          <button
+            type="submit"
+            className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-5 py-2.5 rounded-xl text-sm font-semibold transition active:scale-95 shadow-[0_0_15px_rgba(6,182,212,0.15)]"
           >
-            <div className="flex-1 pr-4">
-              <h3 className="text-base font-bold text-gray-100">{app.name}</h3>
-              <p className="text-xs text-gray-500 font-mono mb-1">{app.app_id}</p>
-              <p className="text-xs text-gray-400 truncate max-w-xl">{app.description}</p>
+            Search
+          </button>
+        </form>
+      </header>
+
+      {/* Main Content Layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar Category Navigation */}
+        <aside className="w-64 border-r border-slate-800/60 bg-[#090d14]/70 backdrop-blur-lg p-6 flex flex-col gap-2">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2 px-3">
+            Categories
+          </span>
+          {CATEGORIES.map((cat) => {
+            const isActive = selectedCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  setSelectedCategory(cat.id);
+                  setQuery("");
+                }}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                  isActive
+                    ? "bg-gradient-to-r from-cyan-500/20 to-emerald-500/10 text-cyan-300 border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 border border-transparent"
+                }`}
+              >
+                <span className="text-base">{cat.icon}</span>
+                <span>{cat.label}</span>
+              </button>
+            );
+          })}
+        </aside>
+
+        {/* Applications Grid */}
+        <main className="flex-1 p-8 overflow-y-auto bg-[#07090e]/95">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-bold text-slate-200 capitalize">
+                {selectedCategory === "all" ? "Curated Essentials" : selectedCategory}
+              </h2>
+              <span className="text-xs text-slate-400 font-mono">
+                {filteredApps.length} Packages Available
+              </span>
             </div>
 
-            <button
-              disabled={isProcessing}
-              onClick={() => handleAction(app.app_id, isInstalled(app.app_id) ? "uninstall" : "install")}
-              className={`px-5 py-2 rounded-xl font-semibold text-xs min-w-[100px] transition shadow-md active:scale-95 disabled:opacity-50 ${
-                isInstalled(app.app_id)
-                  ? "bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500 hover:text-white"
-                  : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-gray-950"
-              }`}
-            >
-              {isInstalled(app.app_id) ? "Uninstall" : "Install"}
-            </button>
-          </div>
-        ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredApps.map((app) => {
+                const isBusy = processingId === app.app_id;
+                return (
+                  <div
+                    key={app.app_id}
+                    className="bg-[#0e131d]/80 border border-slate-800/80 hover:border-cyan-500/40 rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-[0_0_25px_rgba(6,182,212,0.12)] group relative overflow-hidden"
+                  >
+                    {/* Top Glow Accent */}
+                    <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-        {!query && installed.length === 0 && (
-          <div className="p-10 text-center border border-dashed border-gray-800 rounded-2xl bg-gray-900/20">
-            <p className="text-gray-500 text-sm italic">No Flatpak applications installed yet.</p>
-            <p className="text-xs text-gray-600 mt-1">Use the search bar above to install your first application from Flathub.</p>
+                    <div>
+                      {/* App Header */}
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-center text-xl shadow-inner">
+                            {app.icon || "📦"}
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-bold text-slate-100 group-hover:text-cyan-300 transition-colors">
+                              {app.name}
+                            </h3>
+                            <span className="text-[10px] uppercase font-mono tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/50">
+                              {app.source === "flathub" ? "Flathub Sandbox" : "DNF5 RPM"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-xs text-slate-400 line-clamp-2 mb-4 leading-relaxed">
+                        {app.description}
+                      </p>
+                    </div>
+
+                    {/* Action Bar */}
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-800/60 mt-auto">
+                      <span className="text-[11px] text-slate-400 font-mono">
+                        {app.is_installed ? "Installed" : "Available"}
+                      </span>
+
+                      <div className="flex items-center gap-2">
+                        {app.is_installed ? (
+                          <>
+                            <button
+                              onClick={() => handleAction(app, "launch")}
+                              disabled={isBusy}
+                              className="px-3.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition"
+                            >
+                              Launch
+                            </button>
+                            <button
+                              onClick={() => handleAction(app, "uninstall")}
+                              disabled={isBusy}
+                              className="px-3.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold transition"
+                            >
+                              {isBusy ? "..." : "Remove"}
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleAction(app, "install")}
+                            disabled={isBusy}
+                            className="px-5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-teal-400 hover:opacity-90 text-slate-950 text-xs font-bold transition shadow-md shadow-cyan-500/20 active:scale-95 disabled:opacity-50"
+                          >
+                            {isBusy ? "Installing..." : "Install"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        )}
+        </main>
       </div>
     </div>
   );
