@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Aether VPN Manager
+Comment=Manage WireGuard and OpenVPN secure encrypted connections
+Exec=aether-vpn-core
+Icon=network-vpn
+Terminal=false
+Categories=Network;Security;
+Keywords=vpn;wireguard;openvpn;network;tunnel;security;
+StartupNotify=true

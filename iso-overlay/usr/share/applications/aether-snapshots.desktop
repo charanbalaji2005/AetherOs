@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Aether Snapshots
+Comment=System Snapshot & Recovery Manager — browse Btrfs checkpoints and restore previous system states
+Exec=aether-snapshot-manager
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;Utility;
+Keywords=snapshot;btrfs;rollback;restore;recovery;timetravel;backup;
+StartupNotify=true

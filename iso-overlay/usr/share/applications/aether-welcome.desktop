@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Welcome to AetherOS
+Comment=Quick start guide, shortcuts, and initial setup for AetherOS
+Exec=aether-welcome
+Icon=help-about
+Terminal=false
+Categories=System;Utility;
+StartupNotify=true

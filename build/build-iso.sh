@@ -91,12 +91,11 @@ rm -rf /tmp/aether-staging
 mkdir -p /tmp/aether-staging
 cp -rf ./iso-overlay/* /tmp/aether-staging/
 
-# Explicitly stage the two primary Tauri application binaries
-# (belt-and-suspenders: ensures they land in /usr/local/bin even if
-#  the iso-overlay copy step ran before the Tauri build finished)
+# Explicitly stage Tauri binaries and core utility scripts
 mkdir -p /tmp/aether-staging/usr/local/bin
 cp -f aether/snapshots/src-tauri/target/release/aether-snapshot-manager  /tmp/aether-staging/usr/local/bin/ 2>/dev/null || true
 cp -f aether/software-center/src-tauri/target/release/aether-software    /tmp/aether-staging/usr/local/bin/ 2>/dev/null || true
+cp -f aether/bin/* /tmp/aether-staging/usr/local/bin/ 2>/dev/null || true
 chmod +x /tmp/aether-staging/usr/local/bin/* 2>/dev/null || true
 
 

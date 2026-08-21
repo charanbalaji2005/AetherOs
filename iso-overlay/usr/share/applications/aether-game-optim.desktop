@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Aether Game Booster
+Comment=Optimize CPU governors, GPU clocks, and GameMode for high FPS
+Exec=aether-game-optim
+Icon=input-gaming
+Terminal=false
+Categories=Utility;Game;
+Keywords=game;gamemode;performance;fps;boost;gpu;
+StartupNotify=true

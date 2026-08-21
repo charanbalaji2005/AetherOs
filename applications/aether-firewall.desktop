@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Aether Firewall
+Comment=Manage network security, zones, and firewall rules
+Exec=aether-firewall-core
+Icon=security-high
+Terminal=false
+Categories=Settings;Security;System;
+Keywords=firewall;security;network;firewalld;rules;
+StartupNotify=true

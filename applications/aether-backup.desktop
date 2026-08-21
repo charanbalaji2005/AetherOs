@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Aether System Backup
+Comment=Create and manage Btrfs subvolume system restore points
+Exec=aether-backup-core
+Icon=drive-harddisk
+Terminal=false
+Categories=System;Utility;Archiving;
+Keywords=backup;snapshot;restore;btrfs;recovery;
+StartupNotify=true

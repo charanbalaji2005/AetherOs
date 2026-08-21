@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=AetherOS Files
+Comment=Glassmorphic File Manager for AetherOS — browse all drives in one place
+Exec=aether-files
+Icon=system-file-manager
+Terminal=false
+Categories=FileManager;System;
+Keywords=files;folders;manager;storage;drives;aether;
+StartupNotify=true
+MimeType=inode/directory;
