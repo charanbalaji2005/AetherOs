@@ -1,0 +1,267 @@
+#!/usr/bin/env python3
+"""
+AetherOS Software Center
+A modern, glassmorphic app store for AetherOS with Flatpak and DNF5 integration.
+"""
+
+import sys
+import os
+import subprocess
+import threading
+import json
+import tkinter as tk
+from tkinter import ttk, messagebox
+
+BG_DARK = "#0a0e1a"
+SIDEBAR_BG = "#13192b"
+CARD_BG = "#1b2238"
+CYAN_ACCENT = "#00f0ff"
+PURPLE_ACCENT = "#a855f7"
+TEXT_COLOR = "#e6f1f5"
+TEXT_MUTED = "#8b949e"
+SUCCESS_COLOR = "#4ade80"
+BORDER_COLOR = "rgba(0, 240, 255, 0.2)"
+
+APPS_DATABASE = [
+    {
+        "id": "com.visualstudio.code",
+        "name": "Visual Studio Code",
+        "category": "Development",
+        "desc": "Code editing redefined. Build and debug modern web and cloud applications.",
+        "icon": "code",
+        "package": "code",
+        "type": "dnf"
+    },
+    {
+        "id": "com.valvesoftware.Steam",
+        "name": "Steam",
+        "category": "Gaming",
+        "desc": "The ultimate online game platform. Play thousands of native and Proton games.",
+        "icon": "steam",
+        "package": "steam",
+        "type": "dnf"
+    },
+    {
+        "id": "com.obsproject.Studio",
+        "name": "OBS Studio",
+        "category": "Media",
+        "desc": "Free and open source software for video recording and live streaming.",
+        "icon": "obs-studio",
+        "package": "obs-studio",
+        "type": "dnf"
+    },
+    {
+        "id": "org.videolan.VLC",
+        "name": "VLC Media Player",
+        "category": "Media",
+        "desc": "The versatile multimedia player for all video and audio formats.",
+        "icon": "vlc",
+        "package": "vlc",
+        "type": "dnf"
+    },
+    {
+        "id": "org.gimp.GIMP",
+        "name": "GIMP",
+        "category": "Creativity",
+        "desc": "Professional image manipulation, graphic design, and photo retouching.",
+        "icon": "gimp",
+        "package": "gimp",
+        "type": "dnf"
+    },
+    {
+        "id": "org.libreoffice.LibreOffice",
+        "name": "LibreOffice",
+        "category": "Productivity",
+        "desc": "Powerful open source office suite for documents, spreadsheets, and presentations.",
+        "icon": "libreoffice",
+        "package": "libreoffice",
+        "type": "dnf"
+    },
+    {
+        "id": "org.mozilla.firefox",
+        "name": "Firefox",
+        "category": "Internet",
+        "desc": "Fast, private, and secure web browser with full Wayland hardware acceleration.",
+        "icon": "firefox",
+        "package": "firefox",
+        "type": "dnf"
+    },
+    {
+        "id": "com.discordapp.Discord",
+        "name": "Discord",
+        "category": "Internet",
+        "desc": "All-in-one voice and text chat for gamers and communities.",
+        "icon": "discord",
+        "package": "com.discordapp.Discord",
+        "type": "flatpak"
+    },
+    {
+        "id": "md.obsidian.Obsidian",
+        "name": "Obsidian",
+        "category": "Productivity",
+        "desc": "A powerful knowledge base on top of a local folder of plain text Markdown files.",
+        "icon": "obsidian",
+        "package": "md.obsidian.Obsidian",
+        "type": "flatpak"
+    },
+    {
+        "id": "com.spotify.Client",
+        "name": "Spotify",
+        "category": "Media",
+        "desc": "Digital music service giving you access to millions of songs and podcasts.",
+        "icon": "spotify",
+        "package": "com.spotify.Client",
+        "type": "flatpak"
+    }
+]
+
+class AetherSoftwareCenter(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("AetherOS Software Center")
+        self.geometry("960x640")
+        self.configure(bg=BG_DARK)
+
+        self.current_category = "All"
+        self.search_query = ""
+        self.create_ui()
+
+    def create_ui(self):
+        # Header
+        header = tk.Frame(self, bg=BG_DARK, height=60)
+        header.pack(fill="x", padx=20, pady=12)
+
+        title = tk.Label(header, text="󰢻  AetherOS Software Center", font=("Outfit", 16, "bold"), bg=BG_DARK, fg=CYAN_ACCENT)
+        title.pack(side="left")
+
+        # Search Bar
+        search_frame = tk.Frame(header, bg=CARD_BG, highlightbackground=PURPLE_ACCENT, highlightthickness=1)
+        search_frame.pack(side="right", padx=10)
+
+        search_icon = tk.Label(search_frame, text="🔍", bg=CARD_BG, fg=TEXT_MUTED)
+        search_icon.pack(side="left", padx=(8, 2))
+
+        self.search_entry = tk.Entry(search_frame, bg=CARD_BG, fg=TEXT_COLOR, insertbackground=CYAN_ACCENT, bd=0, font=("Outfit", 11), width=24)
+        self.search_entry.pack(side="left", padx=8, pady=6)
+        self.search_entry.bind("<KeyRelease>", self.on_search)
+
+        # Main Layout
+        body = tk.Frame(self, bg=BG_DARK)
+        body.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+
+        # Sidebar Categories
+        sidebar = tk.Frame(body, bg=SIDEBAR_BG, width=200)
+        sidebar.pack(side="left", fill="y", padx=(0, 15))
+
+        categories = ["All", "Development", "Gaming", "Media", "Productivity", "Creativity", "Internet"]
+        for cat in categories:
+            btn = tk.Button(
+                sidebar, text=f"  {cat}", font=("Outfit", 11),
+                bg=SIDEBAR_BG, fg=TEXT_COLOR, activebackground=CARD_BG, activeforeground=CYAN_ACCENT,
+                bd=0, anchor="w", padx=12, pady=10, cursor="hand2",
+                command=lambda c=cat: self.filter_category(c)
+            )
+            btn.pack(fill="x", pady=2)
+
+        # App Grid Container with Scrollbar
+        app_container = tk.Frame(body, bg=BG_DARK)
+        app_container.pack(side="right", fill="both", expand=True)
+
+        canvas = tk.Canvas(app_container, bg=BG_DARK, bd=0, highlightthickness=0)
+        scrollbar = tk.Scrollbar(app_container, orient="vertical", command=canvas.yview)
+        self.scrollable_frame = tk.Frame(canvas, bg=BG_DARK)
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        self.render_apps()
+
+    def filter_category(self, cat):
+        self.current_category = cat
+        self.render_apps()
+
+    def on_search(self, event):
+        self.search_query = self.search_entry.get().strip().lower()
+        self.render_apps()
+
+    def is_installed(self, app):
+        cmd = ["which", app["package"]] if app["type"] == "dnf" else ["flatpak", "info", app["package"]]
+        try:
+            res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return res.returncode == 0
+        except Exception:
+            return False
+
+    def render_apps(self):
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+
+        filtered = [
+            a for a in APPS_DATABASE
+            if (self.current_category == "All" or a["category"] == self.current_category)
+            and (not self.search_query or self.search_query in a["name"].lower() or self.search_query in a["desc"].lower())
+        ]
+
+        if not filtered:
+            lbl = tk.Label(self.scrollable_frame, text="No applications found.", font=("Outfit", 13), bg=BG_DARK, fg=TEXT_MUTED)
+            lbl.pack(pady=40)
+            return
+
+        for app in filtered:
+            card = tk.Frame(self.scrollable_frame, bg=CARD_BG, bd=1, highlightbackground=BORDER_COLOR, highlightthickness=1)
+            card.pack(fill="x", pady=6, padx=6)
+
+            info_frame = tk.Frame(card, bg=CARD_BG)
+            info_frame.pack(side="left", fill="both", expand=True, padx=16, pady=12)
+
+            title_row = tk.Frame(info_frame, bg=CARD_BG)
+            title_row.pack(fill="x")
+
+            name = tk.Label(title_row, text=app["name"], font=("Outfit", 13, "bold"), bg=CARD_BG, fg=TEXT_COLOR)
+            name.pack(side="left")
+
+            badge = tk.Label(title_row, text=f" {app['type'].upper()} ", font=("Outfit", 8, "bold"), bg=SIDEBAR_BG, fg=PURPLE_ACCENT)
+            badge.pack(side="left", padx=10)
+
+            desc = tk.Label(info_frame, text=app["desc"], font=("Outfit", 10), bg=CARD_BG, fg=TEXT_MUTED, wraplength=480, justify="left")
+            desc.pack(anchor="w", pady=(4, 0))
+
+            installed = self.is_installed(app)
+            btn_text = "Uninstall" if installed else "Install"
+            btn_bg = "#f43f5e" if installed else CYAN_ACCENT
+            btn_fg = "#ffffff" if installed else BG_DARK
+
+            btn = tk.Button(
+                card, text=btn_text, font=("Outfit", 10, "bold"),
+                bg=btn_bg, fg=btn_fg, bd=0, padx=16, pady=6, cursor="hand2",
+                command=lambda a=app, inst=installed: self.toggle_install(a, inst)
+            )
+            btn.pack(side="right", padx=16, pady=16)
+
+    def toggle_install(self, app, is_installed):
+        action = "Uninstall" if is_installed else "Install"
+        if not messagebox.askyesno("Confirm Action", f"Are you sure you want to {action.lower()} {app['name']}?"):
+            return
+
+        def run_task():
+            if is_installed:
+                cmd = f"sudo dnf remove -y {app['package']}" if app["type"] == "dnf" else f"flatpak uninstall -y {app['package']}"
+            else:
+                cmd = f"sudo dnf install -y {app['package']}" if app["type"] == "dnf" else f"flatpak install -y flathub {app['package']}"
+            
+            subprocess.run(cmd, shell=True)
+            self.after(500, self.render_apps)
+
+        threading.Thread(target=run_task, daemon=True).start()
+
+if __name__ == "__main__":
+    app = AetherSoftwareCenter()
+    app.mainloop()

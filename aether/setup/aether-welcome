@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+"""
+AetherOS Welcome & Onboarding Wizard
+Introduces new users to AetherOS keybindings, system tools, and customization.
+"""
+
+import sys
+import os
+import subprocess
+import tkinter as tk
+from tkinter import ttk
+
+BG_DARK = "#0a0e1a"
+CARD_BG = "#13192b"
+CYAN_ACCENT = "#00f0ff"
+PURPLE_ACCENT = "#a855f7"
+TEXT_COLOR = "#e6f1f5"
+TEXT_MUTED = "#8b949e"
+BORDER_COLOR = "#1b2238"
+
+class AetherWelcomeApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Welcome to AetherOS")
+        self.geometry("840x540")
+        self.configure(bg=BG_DARK)
+        self.create_ui()
+
+    def create_ui(self):
+        # Header Banner
+        header = tk.Frame(self, bg=CARD_BG, height=100)
+        header.pack(fill="x", padx=20, pady=20)
+
+        title = tk.Label(header, text="󰢻  Welcome to AetherOS 1.0", font=("Outfit", 20, "bold"), bg=CARD_BG, fg=CYAN_ACCENT)
+        title.pack(anchor="w", padx=20, pady=(15, 4))
+
+        subtitle = tk.Label(header, text="A Fedora-based, Hyprland-first Linux distribution built for performance & aesthetics.", font=("Outfit", 11), bg=CARD_BG, fg=TEXT_MUTED)
+        subtitle.pack(anchor="w", padx=20, pady=(0, 15))
+
+        # Main Grid
+        content = tk.Frame(self, bg=BG_DARK)
+        content.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+
+        # Left Column: Essential Shortcuts
+        left_card = tk.Frame(content, bg=CARD_BG, padx=20, pady=15)
+        left_card.pack(side="left", fill="both", expand=True, padx=(0, 10))
+
+        lbl_sc = tk.Label(left_card, text="⌨️  Key Shortcuts", font=("Outfit", 14, "bold"), bg=CARD_BG, fg=PURPLE_ACCENT)
+        lbl_sc.pack(anchor="w", pady=(0, 10))
+
+        shortcuts = [
+            ("Super + Space", "App Launcher (Rofi / Wofi)"),
+            ("Super + Return", "Terminal Emulator (Kitty)"),
+            ("Super + E", "File Manager (Aether Files)"),
+            ("Super + I", "System Settings (Aether Settings)"),
+            ("Super + A", "AI Assistant (Aether AI)"),
+            ("Super + S", "Screenshot Region"),
+            ("Super + Escape", "Power Menu")
+        ]
+
+        for key, desc in shortcuts:
+            row = tk.Frame(left_card, bg=CARD_BG)
+            row.pack(fill="x", pady=4)
+            k_lbl = tk.Label(row, text=f" {key} ", font=("Outfit", 9, "bold"), bg=BG_DARK, fg=CYAN_ACCENT)
+            k_lbl.pack(side="left")
+            d_lbl = tk.Label(row, text=f"  {desc}", font=("Outfit", 10), bg=CARD_BG, fg=TEXT_COLOR)
+            d_lbl.pack(side="left")
+
+        # Right Column: Quick Launch Actions
+        right_card = tk.Frame(content, bg=CARD_BG, padx=20, pady=15)
+        right_card.pack(side="right", fill="both", expand=True, padx=(10, 0))
+
+        lbl_act = tk.Label(right_card, text="🚀  Quick Setup", font=("Outfit", 14, "bold"), bg=CARD_BG, fg=CYAN_ACCENT)
+        lbl_act.pack(anchor="w", pady=(0, 10))
+
+        actions = [
+            ("Open System Settings", "aether-settings"),
+            ("Launch Software Center", "aether-software"),
+            ("Open Terminal", "kitty"),
+            ("Browse Web", "firefox")
+        ]
+
+        for label, cmd in actions:
+            btn = tk.Button(
+                right_card, text=label, font=("Outfit", 11, "bold"),
+                bg=BG_DARK, fg=TEXT_COLOR, activebackground=CYAN_ACCENT, activeforeground=BG_DARK,
+                bd=1, highlightbackground=BORDER_COLOR, pady=8, cursor="hand2",
+                command=lambda c=cmd: self.launch(c)
+            )
+            btn.pack(fill="x", pady=6)
+
+    def launch(self, cmd):
+        subprocess.Popen(cmd, shell=True)
+
+if __name__ == "__main__":
+    app = AetherWelcomeApp()
+    app.mainloop()

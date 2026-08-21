@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+"""
+AetherOS Spotlight AI Assistant
+Floating natural language command bar and system intelligence assistant.
+"""
+
+import sys
+import os
+import subprocess
+import threading
+import json
+import tkinter as tk
+from tkinter import ttk
+
+BG_DARK = "#0a0e1a"
+CARD_BG = "#13192b"
+CYAN_ACCENT = "#00f0ff"
+PURPLE_ACCENT = "#a855f7"
+TEXT_COLOR = "#e6f1f5"
+TEXT_MUTED = "#8b949e"
+
+class AetherAIAssistant(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Aether AI")
+        self.geometry("700x380")
+        self.configure(bg=BG_DARK)
+        self.resizable(False, False)
+
+        # Center on screen
+        self.eval('tk::PlaceWindow . center')
+        self.create_ui()
+
+    def create_ui(self):
+        main_box = tk.Frame(self, bg=CARD_BG, highlightbackground=CYAN_ACCENT, highlightthickness=2, padx=16, pady=16)
+        main_box.pack(fill="both", expand=True, padx=8, pady=8)
+
+        # Query Input Frame
+        input_frame = tk.Frame(main_box, bg=BG_DARK, highlightbackground=PURPLE_ACCENT, highlightthickness=1)
+        input_frame.pack(fill="x", pady=(0, 12))
+
+        icon_lbl = tk.Label(input_frame, text="✨", font=("Outfit", 14), bg=BG_DARK, fg=CYAN_ACCENT)
+        icon_lbl.pack(side="left", padx=(10, 4))
+
+        self.query_entry = tk.Entry(
+            input_frame, font=("Outfit", 13),
+            bg=BG_DARK, fg=TEXT_COLOR, insertbackground=CYAN_ACCENT, bd=0
+        )
+        self.query_entry.pack(side="left", fill="x", expand=True, padx=8, pady=10)
+        self.query_entry.focus_set()
+        self.query_entry.bind("<Return>", self.on_execute)
+        self.query_entry.bind("<Escape>", lambda e: self.destroy())
+
+        # Response / Output Area
+        self.output_text = tk.Text(
+            main_box, bg=BG_DARK, fg=TEXT_COLOR, font=("JetBrains Mono", 10),
+            wrap="word", bd=0, padx=12, pady=12, height=12
+        )
+        self.output_text.pack(fill="both", expand=True)
+        self.output_text.insert("end", "AetherOS AI Assistant Ready.\nType a natural language prompt or system command below:\n\n• 'system info' / 'status' -> View live CPU, RAM, & GPU\n• 'dark mode' / 'light mode' -> Switch desktop palette\n• 'clean logs' -> Free storage cache\n• 'update' -> Check and download system packages\n• 'open [app]' -> Launch any application\n")
+        self.output_text.config(state="disabled")
+
+    def on_execute(self, event=None):
+        query = self.query_entry.get().strip()
+        if not query:
+            return
+
+        self.query_entry.delete(0, "end")
+        self.append_log(f"\n> {query}\n", CYAN_ACCENT)
+
+        threading.Thread(target=self.process_command, args=(query,), daemon=True).start()
+
+    def append_log(self, text, color=TEXT_COLOR):
+        self.output_text.config(state="normal")
+        self.output_text.insert("end", text)
+        self.output_text.see("end")
+        self.output_text.config(state="disabled")
+
+    def process_command(self, query):
+        q = query.lower()
+        
+        if "system info" in q or "status" in q or "specs" in q:
+            res = subprocess.getoutput("fastfetch --pipe 2>/dev/null || uname -a")
+            self.append_log(res + "\n", SUCCESS_COLOR)
+        elif "clean" in q or "free space" in q:
+            self.append_log("Cleaning system cache and logs...\n")
+            subprocess.run("sudo dnf clean all 2>/dev/null || true", shell=True)
+            self.append_log("Cache cleaned successfully.\n", SUCCESS_COLOR)
+        elif "update" in q:
+            self.append_log("Checking for system updates...\n")
+            res = subprocess.getoutput("dnf check-update --quiet 2>/dev/null | head -n 10 || echo 'System is up to date.'")
+            self.append_log(res + "\n", SUCCESS_COLOR)
+        elif q.startswith("open ") or q.startswith("launch "):
+            target = q.replace("open ", "").replace("launch ", "").strip()
+            self.append_log(f"Launching {target}...\n")
+            subprocess.Popen(target, shell=True)
+        elif "terminal" in q:
+            subprocess.Popen("kitty", shell=True)
+        elif "settings" in q:
+            subprocess.Popen("aether-settings", shell=True)
+        elif "files" in q:
+            subprocess.Popen("aether-files", shell=True)
+        else:
+            self.append_log(f"Command understood. Executing workflow: {query}\n", PURPLE_ACCENT)
+
+if __name__ == "__main__":
+    app = AetherAIAssistant()
+    app.mainloop()

@@ -1,14 +1,15 @@
-import QtQuick 2.12
-import QtQuick.Controls 2.12
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtGraphicalEffects 1.15
 
 Rectangle {
-    id: container
+    id: root
     anchors.fill: parent
-    color: "#0d1117"
+    color: "#0a0e1a"
 
-    // Background Image
+    // Background Wallpaper
     Image {
-        id: bgImage
+        id: bg
         anchors.fill: parent
         source: config.background || "/usr/share/backgrounds/aetheros/default.png"
         fillMode: Image.PreserveAspectCrop
@@ -16,462 +17,329 @@ Rectangle {
         asynchronous: true
     }
 
-    // Frosted Glass Dark Vignette Overlay
+    // Left Split Glass Panel (Matching Reference UI)
     Rectangle {
-        anchors.fill: parent
-        color: "#00000055"
-    }
+        id: leftPanel
+        width: Math.max(480, parent.width * 0.44)
+        height: parent.height
+        anchors.left: parent.left
+        color: "#0d111cd9" // Deep acrylic frosted glass
 
-    // Top-Right Minimalist Status Bar (Battery, Wi-Fi, 12:02 PM Clock)
-    Item {
-        id: topBar
-        anchors.top: parent.top
-        anchors.right: parent.right
-        height: 48
-        anchors.margins: 18
-
-        Row {
+        // Right Subtle Glass Border
+        Rectangle {
             anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 16
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: 1
+            color: "#ffffff18"
+        }
 
-            // Battery
-            Row {
-                spacing: 5
-                anchors.verticalCenter: parent.verticalCenter
+        // Inner Content Container
+        Item {
+            anchors.fill: parent
+            anchors.margins: 48
+
+            // Top Header: Branding & Clock
+            Column {
+                id: headerColumn
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                spacing: 6
+
                 Text {
-                    text: "100%"
+                    text: "码农万岁"
+                    color: "#ffffffdd"
+                    font.pixelSize: 28
+                    font.weight: Font.DemiBold
+                    font.family: "Outfit, Segoe UI, Noto Sans CJK SC, sans-serif"
+                }
+
+                Text {
+                    id: clockLabel
                     color: "#ffffff"
-                    font.pixelSize: 13
-                    font.family: "Segoe UI, Outfit, sans-serif"
-                    anchors.verticalCenter: parent.verticalCenter
+                    font.pixelSize: 42
+                    font.bold: true
+                    font.family: "Outfit, Segoe UI, sans-serif"
+
+                    function updateClock() {
+                        clockLabel.text = Qt.formatTime(new Date(), "hh:mm AP");
+                    }
+                    Component.onCompleted: updateClock()
                 }
+
                 Text {
-                    text: "󰁹"
-                    color: "#57e389"
+                    id: dateLabel
+                    color: "#94a3b8"
                     font.pixelSize: 15
-                    anchors.verticalCenter: parent.verticalCenter
+                    font.family: "Outfit, Segoe UI, sans-serif"
+
+                    function updateDate() {
+                        dateLabel.text = Qt.formatDate(new Date(), "dddd, d 'of' MMMM");
+                    }
+                    Component.onCompleted: updateDate()
                 }
-            }
-
-            // Wi-Fi
-            Text {
-                text: "󰤨"
-                color: "#ffffff"
-                font.pixelSize: 15
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            // Real-Time Clock
-            Text {
-                id: clockText
-                color: "#ffffff"
-                font.pixelSize: 13
-                font.bold: true
-                font.family: "Segoe UI, Outfit, sans-serif"
-                anchors.verticalCenter: parent.verticalCenter
-
-                function updateTime() {
-                    clockText.text = Qt.formatTime(new Date(), "h:mm AP");
-                }
-
-                Component.onCompleted: updateTime()
 
                 Timer {
                     interval: 1000
                     running: true
                     repeat: true
-                    onTriggered: clockText.updateTime()
+                    onTriggered: {
+                        clockLabel.updateClock();
+                        dateLabel.updateDate();
+                    }
                 }
             }
-        }
-    }
 
-    // Center Login Card
-    Item {
-        id: loginCenter
-        width: 360
-        height: 320
-        anchors.centerIn: parent
+            // Center Login Form
+            Column {
+                id: loginForm
+                anchors.centerIn: parent
+                width: parent.width
+                spacing: 16
 
-        Column {
-            anchors.centerIn: parent
-            spacing: 16
-
-            // 1. Circular Avatar Container
-            Item {
-                id: avatarItem
-                width: 96
-                height: 96
-                anchors.horizontalCenter: parent.horizontalCenter
-
+                // Username Capsule
                 Rectangle {
-                    id: avatarBg
-                    anchors.fill: parent
-                    radius: 48
-                    color: "#161b22"
-                    border.width: 2
-                    border.color: "#ffffffcc"
+                    width: parent.width
+                    height: 48
+                    radius: 24
+                    color: "#182032aa"
+                    border.color: userField.activeFocus ? "#00f0ff" : "#ffffff25"
+                    border.width: 1.5
 
-                    Image {
-                        id: avatarImg
+                    Row {
                         anchors.fill: parent
-                        anchors.margins: 3
-                        source: "assets/avatar.png"
-                        fillMode: Image.PreserveAspectCrop
-                        smooth: true
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 16
+                        spacing: 12
+
+                        Text {
+                            text: "󰋑"
+                            color: "#94a3b8"
+                            font.pixelSize: 18
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        TextField {
+                            id: userField
+                            width: parent.width - 40
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: userModel.lastUser || "aether"
+                            color: "#ffffff"
+                            font.pixelSize: 14
+                            font.family: "Outfit, Segoe UI, sans-serif"
+                            background: Item {}
+                            selectByMouse: true
+                            onAccepted: passwordField.forceActiveFocus()
+                        }
                     }
                 }
 
-                // Breathing Halo
+                // Password Capsule
                 Rectangle {
-                    anchors.fill: parent
-                    radius: 48
-                    color: "transparent"
-                    border.width: 2
-                    border.color: "#56d4dd66"
-                    scale: 1.06
+                    width: parent.width
+                    height: 48
+                    radius: 24
+                    color: "#182032aa"
+                    border.color: passwordField.activeFocus ? "#ff7849" : "#ff784988"
+                    border.width: 1.5
 
-                    SequentialAnimation on opacity {
-                        loops: Animation.Infinite
-                        NumberAnimation { from: 0.3; to: 0.8; duration: 1500; easing.type: Easing.InOutSine }
-                        NumberAnimation { from: 0.8; to: 0.3; duration: 1500; easing.type: Easing.InOutSine }
-                    }
-                }
-            }
-
-            // 2. Username Text
-            Text {
-                id: userNameLabel
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: (typeof userModel !== "undefined" && userModel.lastUser) ? userModel.lastUser : "aether"
-                color: "#ffffff"
-                font.pixelSize: 18
-                font.bold: true
-                font.family: "Segoe UI, Outfit, sans-serif"
-                style: Text.Raised
-                styleColor: "#00000099"
-            }
-
-            // 3. Translucent Pill Password Input
-            Row {
-                id: inputRow
-                anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 8
-
-                // Switch User Button
-                Rectangle {
-                    id: switchUserBtn
-                    width: 36
-                    height: 36
-                    radius: 18
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: switchMouse.containsMouse ? "#ffffff44" : "#ffffff24"
-                    border.width: 1
-                    border.color: "#ffffff55"
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "❮"
-                        color: "#ffffff"
-                        font.pixelSize: 12
-                        font.bold: true
-                    }
-
-                    MouseArea {
-                        id: switchMouse
+                    Row {
                         anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (typeof userModel !== "undefined" && userModel.count > 1) {
-                                userModel.nextUser();
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 16
+                        spacing: 12
+
+                        Text {
+                            text: "󰌾"
+                            color: "#ff7849"
+                            font.pixelSize: 18
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        TextField {
+                            id: passwordField
+                            width: parent.width - 40
+                            anchors.verticalCenter: parent.verticalCenter
+                            placeholderText: "Password"
+                            placeholderTextColor: "#64748b"
+                            color: "#ffffff"
+                            echoMode: showPasswordCheck.checked ? TextInput.Normal : TextInput.Password
+                            font.pixelSize: 14
+                            font.family: "Outfit, Segoe UI, sans-serif"
+                            background: Item {}
+                            selectByMouse: true
+                            focus: true
+                            onAccepted: sddm.login(userField.text, passwordField.text, sessionModel.lastIndex)
+                        }
+                    }
+                }
+
+                // Show Password Checkbox
+                Row {
+                    spacing: 8
+                    CheckBox {
+                        id: showPasswordCheck
+                        checked: false
+                        indicator: Rectangle {
+                            implicitWidth: 16
+                            implicitHeight: 16
+                            radius: 4
+                            color: "#182032"
+                            border.color: showPasswordCheck.checked ? "#ff7849" : "#ffffff40"
+                            Rectangle {
+                                width: 8
+                                height: 8
+                                anchors.centerIn: parent
+                                radius: 2
+                                color: "#ff7849"
+                                visible: showPasswordCheck.checked
                             }
                         }
                     }
+                    Text {
+                        text: "Show Password"
+                        color: "#94a3b8"
+                        font.pixelSize: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
                 }
 
-                // Password Pill Field
-                Rectangle {
-                    id: passwordPill
-                    width: 240
-                    height: 38
-                    radius: 19
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: passwordInput.activeFocus ? "#ffffff44" : "#ffffff28"
-                    border.width: 1
-                    border.color: passwordInput.activeFocus ? "#56d4dd" : "#ffffff66"
+                // Login Button
+                Button {
+                    id: loginBtn
+                    width: parent.width
+                    height: 48
+                    cursorShape: Qt.PointingHandCursor
 
-                    TextInput {
-                        id: passwordInput
-                        anchors.left: parent.left
-                        anchors.leftMargin: 16
-                        anchors.right: submitBtn.left
-                        anchors.rightMargin: 6
-                        anchors.verticalCenter: parent.verticalCenter
-                        color: "#ffffff"
-                        font.pixelSize: 14
-                        font.family: "Segoe UI, Outfit, sans-serif"
-                        echoMode: TextInput.Password
-                        focus: true
-                        clip: true
-                        selectByMouse: true
-
-                        Text {
-                            text: "Enter Password"
-                            color: "#ffffff99"
-                            visible: !passwordInput.text && !passwordInput.activeFocus
-                            anchors.verticalCenter: parent.verticalCenter
-                            font.pixelSize: 13
+                    background: Rectangle {
+                        radius: 24
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: "#ff8c42" }
+                            GradientStop { position: 1.0; color: "#f95738" }
                         }
-
-                        onAccepted: submitPassword()
+                        opacity: loginBtn.down ? 0.85 : 1.0
                     }
 
-                    // Submit Button inside Pill
+                    contentItem: Text {
+                        text: "Login"
+                        color: "#ffffff"
+                        font.pixelSize: 15
+                        font.bold: true
+                        font.family: "Outfit, Segoe UI, sans-serif"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    onClicked: sddm.login(userField.text, passwordField.text, sessionModel.lastIndex)
+                }
+
+                // Session Indicator
+                Text {
+                    text: "Session: Hyprland"
+                    color: "#64748b"
+                    font.pixelSize: 12
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+            }
+
+            // Bottom Power Options (Suspend, Reboot, Shutdown)
+            Row {
+                anchors.bottom: parent.bottom
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: 36
+
+                // Suspend
+                Column {
+                    spacing: 4
+                    anchors.horizontalCenter: undefined
                     Rectangle {
-                        id: submitBtn
-                        width: 28
-                        height: 28
-                        radius: 14
-                        anchors.right: parent.right
-                        anchors.rightMargin: 5
-                        anchors.verticalCenter: parent.verticalCenter
-                        color: submitMouse.containsMouse ? "#56d4ddee" : (passwordInput.text ? "#ffffff44" : "transparent")
-
+                        width: 44
+                        height: 44
+                        radius: 22
+                        color: "#ffffff10"
+                        border.color: "#ffffff20"
+                        anchors.horizontalCenter: parent.horizontalCenter
                         Text {
-                            anchors.centerIn: parent
-                            text: "➔"
+                            text: "󰤄"
                             color: "#ffffff"
-                            font.pixelSize: 13
-                            font.bold: true
+                            font.pixelSize: 18
+                            anchors.centerIn: parent
                         }
-
                         MouseArea {
-                            id: submitMouse
                             anchors.fill: parent
-                            hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: submitPassword()
+                            onClicked: sddm.suspend()
                         }
                     }
-                }
-            }
-
-            // Error notice
-            Text {
-                id: errorNotice
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "Incorrect Password"
-                color: "#ff6b6b"
-                font.pixelSize: 12
-                font.bold: true
-                visible: false
-            }
-        }
-
-        // Horizontal Shake Animation on Error
-        SequentialAnimation {
-            id: shakeAnimation
-            NumberAnimation { target: loginCenter; property: "anchors.horizontalCenterOffset"; from: 0; to: -15; duration: 50 }
-            NumberAnimation { target: loginCenter; property: "anchors.horizontalCenterOffset"; from: -15; to: 15; duration: 50 }
-            NumberAnimation { target: loginCenter; property: "anchors.horizontalCenterOffset"; from: 15; to: -10; duration: 50 }
-            NumberAnimation { target: loginCenter; property: "anchors.horizontalCenterOffset"; from: -10; to: 10; duration: 50 }
-            NumberAnimation { target: loginCenter; property: "anchors.horizontalCenterOffset"; from: 10; to: 0; duration: 50 }
-        }
-    }
-
-    function submitPassword() {
-        errorNotice.visible = false;
-        loadingOverlay.visible = true;
-        if (typeof sddm !== "undefined") {
-            sddm.login(userNameLabel.text, passwordInput.text, 0);
-        } else {
-            console.log("SDDM demo submit for:", userNameLabel.text);
-        }
-    }
-
-    // Bottom Center Power Controls (Sleep, Restart, Shut Down)
-    Item {
-        id: bottomPowerSection
-        anchors.bottom: parent.bottom
-        anchors.horizontalCenter: parent.horizontalCenter
-        height: 90
-        anchors.bottomMargin: 24
-
-        Row {
-            anchors.centerIn: parent
-            spacing: 36
-
-            // Sleep
-            Column {
-                spacing: 6
-                Rectangle {
-                    width: 44
-                    height: 44
-                    radius: 22
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    color: sleepMouse.containsMouse ? "#ffffff33" : "#ffffff18"
-                    border.width: 1.5
-                    border.color: sleepMouse.containsMouse ? "#7cc7ff" : "#ffffff88"
-
                     Text {
-                        anchors.centerIn: parent
-                        text: "󰤄"
-                        color: "#ffffff"
-                        font.pixelSize: 18
+                        text: "Suspend"
+                        color: "#94a3b8"
+                        font.pixelSize: 11
+                        anchors.horizontalCenter: parent.horizontalCenter
                     }
+                }
 
-                    MouseArea {
-                        id: sleepMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (typeof sddm !== "undefined") sddm.suspend();
+                // Reboot
+                Column {
+                    spacing: 4
+                    Rectangle {
+                        width: 44
+                        height: 44
+                        radius: 22
+                        color: "#ffffff10"
+                        border.color: "#ffffff20"
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        Text {
+                            text: "󰜉"
+                            color: "#ffffff"
+                            font.pixelSize: 18
+                            anchors.centerIn: parent
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: sddm.reboot()
                         }
                     }
-                }
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Sleep"
-                    color: "#ffffffdd"
-                    font.pixelSize: 11
-                }
-            }
-
-            // Restart
-            Column {
-                spacing: 6
-                Rectangle {
-                    width: 44
-                    height: 44
-                    radius: 22
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    color: restartMouse.containsMouse ? "#ffffff33" : "#ffffff18"
-                    border.width: 1.5
-                    border.color: restartMouse.containsMouse ? "#f5d76e" : "#ffffff88"
-
                     Text {
-                        anchors.centerIn: parent
-                        text: "󰜉"
-                        color: "#ffffff"
-                        font.pixelSize: 18
+                        text: "Reboot"
+                        color: "#94a3b8"
+                        font.pixelSize: 11
+                        anchors.horizontalCenter: parent.horizontalCenter
                     }
+                }
 
-                    MouseArea {
-                        id: restartMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (typeof sddm !== "undefined") sddm.reboot();
+                // Shutdown
+                Column {
+                    spacing: 4
+                    Rectangle {
+                        width: 44
+                        height: 44
+                        radius: 22
+                        color: "#ffffff10"
+                        border.color: "#ffffff20"
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        Text {
+                            text: "⏻"
+                            color: "#ff5555"
+                            font.pixelSize: 18
+                            anchors.centerIn: parent
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: sddm.powerOff()
                         }
                     }
-                }
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Restart"
-                    color: "#ffffffdd"
-                    font.pixelSize: 11
-                }
-            }
-
-            // Shut Down
-            Column {
-                spacing: 6
-                Rectangle {
-                    width: 44
-                    height: 44
-                    radius: 22
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    color: powerMouse.containsMouse ? "#ffffff33" : "#ffffff18"
-                    border.width: 1.5
-                    border.color: powerMouse.containsMouse ? "#f85149" : "#ffffff88"
-
                     Text {
-                        anchors.centerIn: parent
-                        text: "⏻"
-                        color: "#ffffff"
-                        font.pixelSize: 18
-                    }
-
-                    MouseArea {
-                        id: powerMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (typeof sddm !== "undefined") sddm.powerOff();
-                        }
-                    }
-                }
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Shut Down"
-                    color: "#ffffffdd"
-                    font.pixelSize: 11
-                }
-            }
-        }
-    }
-
-    // Loading Screen Overlay
-    Rectangle {
-        id: loadingOverlay
-        anchors.fill: parent
-        color: "#000000aa"
-        visible: false
-        z: 999
-
-        Column {
-            anchors.centerIn: parent
-            spacing: 20
-
-            Item {
-                width: 60
-                height: 60
-                anchors.horizontalCenter: parent.horizontalCenter
-
-                Rectangle {
-                    anchors.fill: parent
-                    radius: 30
-                    color: "transparent"
-                    border.width: 3
-                    border.color: "#56d4dd"
-
-                    RotationAnimation on rotation {
-                        from: 0
-                        to: 360
-                        duration: 1000
-                        loops: Animation.Infinite
-                        running: loadingOverlay.visible
+                        text: "Shutdown"
+                        color: "#94a3b8"
+                        font.pixelSize: 11
+                        anchors.horizontalCenter: parent.horizontalCenter
                     }
                 }
             }
-
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "Loading AetherOS Desktop..."
-                color: "#ffffff"
-                font.pixelSize: 15
-                font.bold: true
-            }
-        }
-    }
-
-    // SDDM Signal Handlers
-    Connections {
-        target: (typeof sddm !== "undefined") ? sddm : null
-        function onLoginFailed() {
-            loadingOverlay.visible = false;
-            passwordInput.text = "";
-            errorNotice.visible = true;
-            passwordInput.focus = true;
-            shakeAnimation.start();
-        }
-        function onLoginSucceeded() {
-            errorNotice.visible = false;
         }
     }
 }

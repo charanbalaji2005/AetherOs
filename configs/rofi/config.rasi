@@ -1,0 +1,143 @@
+/**
+ * AetherOS - Frosted Glass App Launcher Theme (Rofi Wayland)
+ * Designed to mirror the centered dual-pane frosted glass layout in Reference Image 1.
+ **/
+
+configuration {
+    modi:                       "drun,run,filebrowser";
+    show-icons:                 true;
+    display-drun:               "";
+    display-run:                "";
+    display-filebrowser:        "";
+    drun-display-format:        "{name}";
+    font:                       "Outfit 11";
+}
+
+* {
+    bg-col:                     rgba(18, 22, 34, 0.75);
+    bg-col-light:               rgba(255, 255, 255, 0.08);
+    border-col:                 rgba(255, 255, 255, 0.15);
+    selected-col:               rgba(0, 240, 255, 0.22);
+    cyan:                       #00f0ff;
+    purple:                     #a855f7;
+    fg-col:                     #e6f1f5;
+    fg-col-dim:                 #94a3b8;
+    highlight:                  bold #00f0ff;
+}
+
+window {
+    width:                      860px;
+    height:                     500px;
+    border:                     1px solid;
+    border-color:               @border-col;
+    border-radius:              24px;
+    background-color:           @bg-col;
+    padding:                    0px;
+}
+
+mainbox {
+    background-color:           transparent;
+    orientation:                horizontal;
+    children:                   [ "left-pane", "right-pane" ];
+}
+
+/* Left Pane: Frosted Artwork & Action Buttons */
+left-pane {
+    background-color:           rgba(0, 0, 0, 0.15);
+    border:                     0px 1px 0px 0px;
+    border-color:               @border-col;
+    width:                      340px;
+    padding:                    24px;
+    orientation:                horizontal;
+    children:                   [ "action-bar", "left-dummy" ];
+}
+
+action-bar {
+    width:                      48px;
+    spacing:                    12px;
+    orientation:                vertical;
+    background-color:           transparent;
+    children:                   [ "btn-1", "btn-2", "btn-3", "btn-4" ];
+}
+
+btn-1, btn-2, btn-3, btn-4 {
+    height:                     40px;
+    width:                      40px;
+    border-radius:              20px;
+    background-color:           rgba(255, 255, 255, 0.12);
+    border:                     1px solid rgba(255, 255, 255, 0.18);
+    text-color:                 #ffffff;
+    cursor:                     pointer;
+}
+
+left-dummy {
+    expand:                     true;
+    background-color:           transparent;
+}
+
+/* Right Pane: Search & Application List */
+right-pane {
+    background-color:           rgba(13, 17, 28, 0.45);
+    padding:                    24px 20px;
+    orientation:                vertical;
+    children:                   [ "inputbar", "listview" ];
+}
+
+inputbar {
+    background-color:           rgba(255, 255, 255, 0.08);
+    border-radius:              14px;
+    border:                     1px solid rgba(255, 255, 255, 0.12);
+    padding:                    10px 16px;
+    margin:                     0px 0px 16px 0px;
+    children:                   [ "prompt", "entry" ];
+}
+
+prompt {
+    background-color:           transparent;
+    text-color:                 @cyan;
+    margin:                     0px 10px 0px 0px;
+}
+
+entry {
+    background-color:           transparent;
+    text-color:                 @fg-col;
+    placeholder-color:          @fg-col-dim;
+    placeholder:                "Discover apps...";
+}
+
+listview {
+    background-color:           transparent;
+    columns:                    1;
+    lines:                      7;
+    spacing:                    6px;
+    cycle:                      true;
+    dynamic:                    true;
+    layout:                     vertical;
+}
+
+element {
+    background-color:           transparent;
+    text-color:                 @fg-col;
+    border-radius:              12px;
+    padding:                    8px 12px;
+    spacing:                    12px;
+}
+
+element-icon {
+    size:                       28px;
+    cursor:                     inherit;
+    background-color:           transparent;
+}
+
+element-text {
+    vertical-align:             0.5;
+    text-color:                 inherit;
+    cursor:                     inherit;
+    background-color:           transparent;
+}
+
+element selected {
+    background-color:           @selected-col;
+    border:                     1px solid rgba(0, 240, 255, 0.4);
+    text-color:                 #ffffff;
+}

@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
-# AetherOS Glassmorphic Power Menu via Wofi
+# AetherOS Native Glassmorphic Power Menu Launcher
 set -euo pipefail
 
+# 1. Try launching native Tauri Power Menu if compiled/available
+if command -v aether-powermenu-app >/dev/null 2>&1; then
+    exec aether-powermenu-app
+fi
+
+if [ -f "/usr/local/bin/aether-powermenu-app" ]; then
+    exec /usr/local/bin/aether-powermenu-app
+fi
+
+# 2. Fallback to lightweight frosted Wofi/Rofi menu
 CHOSEN=$(printf "󰌾  Lock Screen\n󰤄  Sleep / Suspend\n󰜉  Restart System\n⏻  Shut Down\n󰍃  Log Out" | wofi --dmenu --prompt "Power Options" --width 340 --height 280 --location center --style /etc/skel/.config/wofi/style.css 2>/dev/null || true)
 
 case "$CHOSEN" in

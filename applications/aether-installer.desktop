@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Install AetherOS
+Comment=Install AetherOS Linux to your hard drive or SSD
+Exec=aether-installer
+Icon=system-software-install
+Terminal=false
+Categories=System;Utility;
+Keywords=install;installer;calamares;setup;
+StartupNotify=true

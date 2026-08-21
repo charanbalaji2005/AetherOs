@@ -31,15 +31,17 @@ $RECYCLE.BIN/
 *.key
 *.crt
 
-# Log files
+# Log files & Crash Dumps
 *.log
-anaconda/*.log
+anaconda/
+anaconda-tb-*
 livemedia.log
 program.log
 logs/
 
 # Build & OS Image Artifacts
 *.iso
+*.iso.sha256
 *.img
 *.qcow2
 *.vmdk
@@ -57,6 +59,8 @@ logs/
 
 # Build Output Directories
 build/out/
+build/staging/
+build/tmp/
 build/iso/*.iso
 build/livecd/*.iso
 dist/

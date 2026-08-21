@@ -49,10 +49,15 @@ if [ -d "$PROJECT_ROOT/configs/waybar/scripts" ]; then
 fi
 chmod +x "$STAGING_DIR/rootfs/etc/skel/.config/waybar/scripts/"*.sh 2>/dev/null || true
 
-# Wofi, Dunst, Kitty
+# Wofi, Rofi, Dunst, Kitty
 mkdir -p "$STAGING_DIR/rootfs/etc/skel/.config/wofi"
 install -Dm644 "$PROJECT_ROOT/configs/wofi/config" "$STAGING_DIR/rootfs/etc/skel/.config/wofi/config"
 install -Dm644 "$PROJECT_ROOT/configs/wofi/style.css" "$STAGING_DIR/rootfs/etc/skel/.config/wofi/style.css"
+
+mkdir -p "$STAGING_DIR/rootfs/etc/skel/.config/rofi"
+if [ -f "$PROJECT_ROOT/configs/rofi/config.rasi" ]; then
+    install -Dm644 "$PROJECT_ROOT/configs/rofi/config.rasi" "$STAGING_DIR/rootfs/etc/skel/.config/rofi/config.rasi"
+fi
 
 mkdir -p "$STAGING_DIR/rootfs/etc/skel/.config/dunst"
 install -Dm644 "$PROJECT_ROOT/configs/dunst/dunstrc" "$STAGING_DIR/rootfs/etc/skel/.config/dunst/dunstrc"
@@ -77,7 +82,13 @@ install -Dm755 "$PROJECT_ROOT/aether/bin/aether-desktop-overlay" "$STAGING_DIR/r
 install -Dm755 "$PROJECT_ROOT/aether/bin/aether-files"        "$STAGING_DIR/rootfs/usr/local/bin/aether-files"
 install -Dm755 "$PROJECT_ROOT/aether/bin/aether-powermenu"    "$STAGING_DIR/rootfs/usr/local/bin/aether-powermenu"
 install -Dm755 "$PROJECT_ROOT/aether/bin/aether-screenshot"   "$STAGING_DIR/rootfs/usr/local/bin/aether-screenshot"
+install -Dm755 "$PROJECT_ROOT/aether/bin/aether-installer"    "$STAGING_DIR/rootfs/usr/local/bin/aether-installer"
 install -Dm755 "$PROJECT_ROOT/aether/settings/aether-settings" "$STAGING_DIR/rootfs/usr/local/bin/aether-settings"
+install -Dm755 "$PROJECT_ROOT/aether/software-center/aether-software" "$STAGING_DIR/rootfs/usr/local/bin/aether-software"
+install -Dm755 "$PROJECT_ROOT/aether/setup/aether-welcome"    "$STAGING_DIR/rootfs/usr/local/bin/aether-welcome"
+install -Dm755 "$PROJECT_ROOT/aether/ai/aether-ai"            "$STAGING_DIR/rootfs/usr/local/bin/aether-ai"
+install -Dm755 "$PROJECT_ROOT/aether/battery/aether-battery-daemon" "$STAGING_DIR/rootfs/usr/local/bin/aether-battery-daemon"
+install -Dm755 "$PROJECT_ROOT/aether/update-engine/aether-updater" "$STAGING_DIR/rootfs/usr/local/bin/aether-updater"
 install -Dm755 "$PROJECT_ROOT/aether/setup/aether-firstboot"  "$STAGING_DIR/rootfs/usr/local/bin/aether-firstboot"
 install -Dm644 "$PROJECT_ROOT/configs/systemd/aether-firstboot.service" "$STAGING_DIR/rootfs/etc/systemd/system/aether-firstboot.service"
 
@@ -86,6 +97,20 @@ cp -r "$PROJECT_ROOT/desktop/widgets/"* "$STAGING_DIR/rootfs/usr/share/aetheros/
 
 mkdir -p "$STAGING_DIR/rootfs/usr/share/aetheros/desktop/files"
 cp -r "$PROJECT_ROOT/desktop/files/"* "$STAGING_DIR/rootfs/usr/share/aetheros/desktop/files/"
+
+# Calamares Configuration & Branding
+if [ -d "$PROJECT_ROOT/configs/calamares" ]; then
+    mkdir -p "$STAGING_DIR/rootfs/etc/calamares"
+    cp -rf "$PROJECT_ROOT/configs/calamares/"* "$STAGING_DIR/rootfs/etc/calamares/"
+fi
+
+# Polkit Rules
+if [ -d "$PROJECT_ROOT/configs/polkit" ]; then
+    mkdir -p "$STAGING_DIR/rootfs/etc/polkit-1/rules.d"
+    cp -rf "$PROJECT_ROOT/configs/polkit/"* "$STAGING_DIR/rootfs/etc/polkit-1/rules.d/"
+    chmod 755 "$STAGING_DIR/rootfs/etc/polkit-1/rules.d"
+    chmod 644 "$STAGING_DIR/rootfs/etc/polkit-1/rules.d/"*.rules 2>/dev/null || true
+fi
 
 # Wallpapers & Assets
 mkdir -p "$STAGING_DIR/rootfs/usr/share/backgrounds/aetheros"
@@ -99,8 +124,12 @@ fi
 
 # Applications & Sessions
 mkdir -p "$STAGING_DIR/rootfs/usr/share/applications"
-install -Dm644 "$PROJECT_ROOT/applications/aether-settings.desktop" "$STAGING_DIR/rootfs/usr/share/applications/aether-settings.desktop"
-install -Dm644 "$PROJECT_ROOT/applications/aether-files.desktop"    "$STAGING_DIR/rootfs/usr/share/applications/aether-files.desktop"
+install -Dm644 "$PROJECT_ROOT/applications/aether-settings.desktop"  "$STAGING_DIR/rootfs/usr/share/applications/aether-settings.desktop"
+install -Dm644 "$PROJECT_ROOT/applications/aether-files.desktop"     "$STAGING_DIR/rootfs/usr/share/applications/aether-files.desktop"
+install -Dm644 "$PROJECT_ROOT/applications/aether-software.desktop"  "$STAGING_DIR/rootfs/usr/share/applications/aether-software.desktop"
+install -Dm644 "$PROJECT_ROOT/applications/aether-welcome.desktop"   "$STAGING_DIR/rootfs/usr/share/applications/aether-welcome.desktop"
+install -Dm644 "$PROJECT_ROOT/applications/aether-ai.desktop"        "$STAGING_DIR/rootfs/usr/share/applications/aether-ai.desktop"
+install -Dm644 "$PROJECT_ROOT/applications/aether-installer.desktop" "$STAGING_DIR/rootfs/usr/share/applications/aether-installer.desktop"
 
 mkdir -p "$STAGING_DIR/rootfs/usr/share/wayland-sessions"
 cat > "$STAGING_DIR/rootfs/usr/share/wayland-sessions/hyprland.desktop" <<'EOF'
@@ -135,7 +164,7 @@ DRACUT_KMODDIR_OVERRIDE=1 dracut \
 
 cp -f "$KERNEL" "$STAGING_DIR/iso/isolinux/vmlinuz"
 
-echo "Live Initramfs created: $(ls -lh "$STAGING_DIR/iso/isolinux/initrd.img")"
+echo "Live Initramfs created at $STAGING_DIR/iso/isolinux/initrd.img"
 
 echo "=== 4. Creating LiveOS SquashFS filesystem ==="
 sync
@@ -235,11 +264,14 @@ if [ -n "$MBR_BIN" ] && [ -f "$STAGING_DIR/iso/isolinux/isolinux.bin" ]; then
         -volid "AETHEROS" \
         -eltorito-boot isolinux/isolinux.bin \
         -eltorito-catalog isolinux/boot.cat \
-        -no-emul-boot -boot-load-size 4 -boot-info-table \
+        -no-emul-boot \
+        -boot-load-size 4 \
+        -boot-info-table \
         -isohybrid-mbr "$MBR_BIN" \
         -eltorito-alt-boot \
         -e isolinux/efiboot.img \
-        -no-emul-boot -isohybrid-gpt-basdat \
+        -no-emul-boot \
+        -isohybrid-gpt-basdat \
         -output "$ISO_PATH" \
         "$STAGING_DIR/iso"
 else

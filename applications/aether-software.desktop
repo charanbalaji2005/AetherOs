@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=AetherOS Software Center
+Comment=Discover, install, and manage applications and games on AetherOS
+Exec=aether-software
+Icon=system-software-install
+Terminal=false
+Categories=System;PackageManager;
+Keywords=software;appstore;apps;flatpak;dnf;install;
+StartupNotify=true

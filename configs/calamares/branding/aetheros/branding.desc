@@ -1,0 +1,39 @@
+# Calamares Branding Descriptor for AetherOS
+---
+componentName:  aetheros
+welcomeStyleCalamares: false
+welcomeExpandingLogo: true
+windowExpanding: normal
+windowSize: 960px,620px
+windowPlacement: center
+
+strings:
+    productName:         AetherOS
+    shortProductName:    AetherOS
+    version:             1.0 (Glass Edition)
+    shortVersion:        1.0
+    versionedName:       AetherOS 1.0
+    shortVersionedName:  AetherOS 1.0
+    bootloaderEntryName: AetherOS
+    productUrl:          https://example.com
+    supportUrl:          https://example.com
+    knownIssuesUrl:      https://example.com
+    releaseNotesUrl:     https://example.com
+
+images:
+    productLogo:         "avatar.png"
+    productIcon:         "avatar.png"
+    productWelcome:      "avatar.png"
+
+style:
+   SidebarBackground:    "#13192b"
+   SidebarTextColor:     "#e6f1f5"
+   SidebarTextSelect:    "#00f0ff"
+   SidebarTextHighlight: "#a855f7"
+
+slideshow:
+    - "slide1.html"
+    - "slide2.html"
+    - "slide3.html"
+
+slideshowAPI: 2

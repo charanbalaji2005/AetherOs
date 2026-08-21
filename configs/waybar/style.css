@@ -1,141 +1,93 @@
-/* AetherOS - Fedora Workstation Cyber-Glass Top Bar Theme */
+/* AetherOS Floating Dock Styling (Reference Image 1) */
 
 * {
-    font-family: "Inter", "Outfit", "Segoe UI", "JetBrainsMono Nerd Font", sans-serif;
+    font-family: "Outfit", "JetBrainsMono Nerd Font", "Segoe UI", sans-serif;
     font-size: 13px;
-    font-weight: 600;
     min-height: 0;
-    margin: 0;
-    padding: 0;
 }
 
 window#waybar {
-    background: rgba(14, 18, 28, 0.92);
-    border-bottom: 1px solid rgba(0, 240, 255, 0.25);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    background-color: transparent;
     color: #e6f1f5;
 }
 
-#custom-activities {
-    color: #00f0ff;
-    font-weight: 700;
-    font-size: 13px;
+/* Floating Dock Container */
+.modules-left,
+.modules-center,
+.modules-right {
+    background: rgba(18, 22, 34, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 22px;
     padding: 2px 14px;
-    margin: 3px 6px;
-    border-radius: 16px;
-    background: rgba(0, 240, 255, 0.12);
-    border: 1px solid rgba(0, 240, 255, 0.35);
+    margin: 0px 4px;
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Launcher Icon */
+#custom-launcher {
+    font-size: 16px;
+    color: #00f0ff;
+    padding-right: 6px;
+}
+
+/* Workspaces Dots */
+#workspaces button {
+    padding: 0 4px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.4);
+    border-radius: 12px;
     transition: all 0.2s ease-in-out;
 }
 
-#custom-activities:hover {
-    background: rgba(0, 240, 255, 0.25);
-    box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
-}
-
-#workspaces {
-    background: rgba(255, 255, 255, 0.05);
-    margin: 3px 4px;
-    padding: 2px 4px;
-    border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-#workspaces button {
-    padding: 1px 9px;
-    color: #8b949e;
-    border-radius: 12px;
-    font-weight: 600;
-    transition: all 0.2s ease;
+#workspaces button.active {
+    color: #00f0ff;
+    font-size: 14px;
 }
 
 #workspaces button:hover {
     color: #ffffff;
-    background: rgba(168, 85, 247, 0.2);
 }
 
-#workspaces button.active {
-    color: #ffffff;
-    background: linear-gradient(135deg, #00f0ff, #a855f7);
-    box-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+/* Running App Icons in Dock */
+#taskbar button {
+    padding: 3px 8px;
+    border-radius: 12px;
+    transition: all 0.2s cubic-bezier(0.05, 0.9, 0.1, 1.05);
 }
 
-#clock {
-    font-size: 13px;
-    font-weight: 600;
-    color: #f0f6fc;
-    background: rgba(255, 255, 255, 0.06);
-    padding: 2px 16px;
-    margin: 3px 0;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: all 0.2s ease;
+#taskbar button.active {
+    background: rgba(0, 240, 255, 0.2);
+    border-bottom: 2px solid #00f0ff;
 }
 
-#clock:hover {
+#taskbar button:hover {
     background: rgba(255, 255, 255, 0.12);
 }
 
-#cpu,
-#memory,
-#battery,
+/* Status Icons */
 #pulseaudio,
 #network,
+#battery,
+#clock,
 #custom-power {
-    padding: 2px 10px;
-    margin: 3px 2px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    color: #e6f1f5;
-    transition: all 0.2s ease;
+    padding: 0 6px;
+    color: #94a3b8;
+    transition: color 0.2s ease;
 }
 
 #pulseaudio:hover,
 #network:hover,
 #battery:hover,
-#cpu:hover,
-#memory:hover {
-    background: rgba(255, 255, 255, 0.12);
-}
-
-#network {
-    color: #00f0ff;
-}
-
-#pulseaudio {
-    color: #38bdf8;
-}
-
-#cpu {
-    color: #c084fc;
-}
-
-#memory {
-    color: #e879f9;
-}
-
-#battery {
-    color: #4ade80;
-}
-
-#battery.warning {
-    color: #facc15;
-}
-
-#battery.critical {
-    color: #f87171;
-    background: rgba(248, 113, 113, 0.2);
+#clock:hover {
+    color: #ffffff;
 }
 
 #custom-power {
-    color: #f43f5e;
-    padding: 2px 10px;
-    background: rgba(244, 63, 94, 0.15);
-    border: 1px solid rgba(244, 63, 94, 0.3);
+    color: #ff5555;
+    font-size: 14px;
+    padding-left: 8px;
 }
 
 #custom-power:hover {
-    background: rgba(244, 63, 94, 0.35);
-    box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
+    color: #ff7878;
 }

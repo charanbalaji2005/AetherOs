@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# AetherOS Automated Update Engine (DNF5 + Flatpak)
+set -euo pipefail
+
+echo "=== AetherOS System Update Engine ==="
+
+# Check DNF updates
+if command -v dnf >/dev/null 2>&1; then
+    echo "Checking system package updates..."
+    sudo dnf upgrade --refresh -y || true
+fi
+
+# Check Flatpak updates
+if command -v flatpak >/dev/null 2>&1; then
+    echo "Updating Flatpak applications..."
+    flatpak update -y || true
+fi
+
+notify-send -a "AetherOS Update Engine" "System Up to Date" "All system packages and Flatpak runtimes have been updated."

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Aether AI
+Comment=Spotlight Natural Language AI Assistant & System Intelligence
+Exec=aether-ai
+Icon=preferences-system-search
+Terminal=false
+Categories=Utility;System;
+Keywords=ai;assistant;spotlight;gemini;search;
+StartupNotify=true

@@ -97,6 +97,8 @@ hyprland
 xdg-desktop-portal-hyprland
 waybar
 wofi
+rofi-wayland
+thunar
 bluez
 blueman
 network-manager-applet
@@ -108,20 +110,27 @@ slurp
 wl-clipboard
 playerctl
 swaybg
+hyprpaper
 dunst
 nautilus
 brightnessctl
+pamixer
 kitty
 sddm
 polkit-kde
+polkit-gnome
 pipewire
 pipewire-pulseaudio
 wireplumber
 pavucontrol
 qt5-qtwayland
 qt6-qtwayland
+qt5-qtquickcontrols2
+qt5-qtgraphicaleffects
 python3-gobject
 python3-tkinter
+calamares
+calamares-libs
 plymouth
 plymouth-plugin-script
 plymouth-theme-spinner
@@ -134,6 +143,28 @@ xorg-x11-drv-intel
 libva-intel-media-driver
 libva-utils
 vulkan-tools
+
+# --- Developer, Cloud & Database Stack ---
+git
+curl
+wget
+gcc
+gcc-c++
+make
+cmake
+nodejs
+npm
+php
+php-cli
+mariadb-server
+python3
+python3-pip
+python3-devel
+cargo
+rustc
+podman
+podman-docker
+podman-compose
 vulkan-loader
 
 # --- Complete Fedora Workstation Core Tools & CLI Utilities ---
@@ -220,6 +251,11 @@ TARGET="$INSTALL_ROOT"
 # Aether CLI, GUI Settings, Splash, Desktop Overlay, Files, PowerMenu, Screenshot, and First-Boot
 install -Dm755 "$SOURCE/aether/bin/aether" "$TARGET/usr/local/bin/aether"
 install -Dm755 "$SOURCE/aether/settings/aether-settings" "$TARGET/usr/local/bin/aether-settings"
+install -Dm755 "$SOURCE/aether/software-center/aether-software" "$TARGET/usr/local/bin/aether-software"
+install -Dm755 "$SOURCE/aether/setup/aether-welcome" "$TARGET/usr/local/bin/aether-welcome"
+install -Dm755 "$SOURCE/aether/ai/aether-ai" "$TARGET/usr/local/bin/aether-ai"
+install -Dm755 "$SOURCE/aether/battery/aether-battery-daemon" "$TARGET/usr/local/bin/aether-battery-daemon"
+install -Dm755 "$SOURCE/aether/update-engine/aether-updater" "$TARGET/usr/local/bin/aether-updater"
 install -Dm755 "$SOURCE/aether/bin/aether-splash" "$TARGET/usr/local/bin/aether-splash"
 install -Dm755 "$SOURCE/aether/bin/aether-desktop-overlay" "$TARGET/usr/local/bin/aether-desktop-overlay"
 install -Dm755 "$SOURCE/aether/bin/aether-files" "$TARGET/usr/local/bin/aether-files"
@@ -270,6 +306,12 @@ mkdir -p "$TARGET/etc/skel/.config/wofi"
 install -Dm644 "$SOURCE/configs/wofi/config" "$TARGET/etc/skel/.config/wofi/config"
 install -Dm644 "$SOURCE/configs/wofi/style.css" "$TARGET/etc/skel/.config/wofi/style.css"
 
+# Rofi
+mkdir -p "$TARGET/etc/skel/.config/rofi"
+if [ -f "$SOURCE/configs/rofi/config.rasi" ]; then
+    install -Dm644 "$SOURCE/configs/rofi/config.rasi" "$TARGET/etc/skel/.config/rofi/config.rasi"
+fi
+
 # Dunst
 mkdir -p "$TARGET/etc/skel/.config/dunst"
 install -Dm644 "$SOURCE/configs/dunst/dunstrc" "$TARGET/etc/skel/.config/dunst/dunstrc"
@@ -282,6 +324,24 @@ install -Dm644 "$SOURCE/configs/kitty/kitty.conf" "$TARGET/etc/skel/.config/kitt
 mkdir -p "$TARGET/usr/share/applications"
 install -Dm644 "$SOURCE/applications/aether-settings.desktop" "$TARGET/usr/share/applications/aether-settings.desktop"
 install -Dm644 "$SOURCE/applications/aether-files.desktop" "$TARGET/usr/share/applications/aether-files.desktop"
+install -Dm644 "$SOURCE/applications/aether-software.desktop" "$TARGET/usr/share/applications/aether-software.desktop"
+install -Dm644 "$SOURCE/applications/aether-welcome.desktop" "$TARGET/usr/share/applications/aether-welcome.desktop"
+install -Dm644 "$SOURCE/applications/aether-ai.desktop" "$TARGET/usr/share/applications/aether-ai.desktop"
+install -Dm644 "$SOURCE/applications/aether-installer.desktop" "$TARGET/usr/share/applications/aether-installer.desktop"
+
+# Calamares Installer Configuration
+if [ -d "$SOURCE/configs/calamares" ]; then
+    mkdir -p "$TARGET/etc/calamares"
+    cp -rf "$SOURCE/configs/calamares/"* "$TARGET/etc/calamares/"
+fi
+
+# Polkit Rules
+if [ -d "$SOURCE/configs/polkit" ]; then
+    mkdir -p "$TARGET/etc/polkit-1/rules.d"
+    cp -rf "$SOURCE/configs/polkit/"* "$TARGET/etc/polkit-1/rules.d/"
+    chmod 755 "$TARGET/etc/polkit-1/rules.d"
+    chmod 644 "$TARGET/etc/polkit-1/rules.d/"*.rules 2>/dev/null || true
+fi
 
 # Modular system configurations
 mkdir -p "$TARGET/etc/dracut.conf.d"
@@ -370,6 +430,8 @@ systemctl enable NetworkManager.service
 systemctl enable firewalld.service
 systemctl enable bluetooth.service
 systemctl enable power-profiles-daemon.service
+systemctl enable mariadb.service 2>/dev/null || true
+systemctl enable podman.socket 2>/dev/null || true
 systemctl enable vmtoolsd.service 2>/dev/null || true
 systemctl enable qemu-guest-agent.service 2>/dev/null || true
 
