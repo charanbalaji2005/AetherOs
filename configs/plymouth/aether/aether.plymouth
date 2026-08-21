@@ -1,0 +1,13 @@
+[Plymouth Theme]
+Name=Aether OS
+Description=Cyberpunk glassmorphism splash for Aether OS
+ModuleName=spinner
+
+[spinner]
+ThemeDir=/usr/share/plymouth/themes/aether
+ImageDir=/usr/share/plymouth/themes/aether
+BackgroundStartColor=0x0a0a0f
+BackgroundEndColor=0x0a0a0f
+WatermarkHorizontalAlignment=.5
+WatermarkVerticalAlignment=.5
+Transition=none

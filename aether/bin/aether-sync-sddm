@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# /usr/local/bin/aether-sync-sddm
+# Syncs user desktop wallpaper to the SDDM login screen
+set -euo pipefail
+
+NEW_WALLPAPER="${1:-}"
+TARGET_DIR="/usr/share/sddm/themes/aether/assets"
+TARGET_FILE="$TARGET_DIR/background.jpg"
+
+if [ -z "$NEW_WALLPAPER" ] || [ ! -f "$NEW_WALLPAPER" ]; then
+    echo "Error: Wallpaper file not found: $NEW_WALLPAPER" >&2
+    exit 1
+fi
+
+mkdir -p "$TARGET_DIR"
+cp -f "$NEW_WALLPAPER" "$TARGET_FILE"
+chmod 644 "$TARGET_FILE"
+
+echo "SDDM background synced successfully."

@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# /usr/local/bin/aether-driver-core
+# Aether OS Hardware Detection & Installation Engine with Secure Boot MOK Staging
+set -euo pipefail
+
+ACTION="${1:-detect}"
+TARGET="${2:-}"
+
+if [ "$ACTION" == "detect" ]; then
+    # Check for Nvidia GPUs
+    if lspci -nn 2>/dev/null | grep -iE 'VGA|3D' | grep -iq nvidia; then
+        echo "NVIDIA_DETECTED=true"
+    else
+        echo "NVIDIA_DETECTED=false"
+    fi
+
+    # Check for Broadcom Network controllers
+    if lspci -nn 2>/dev/null | grep -i network | grep -iq broadcom; then
+        echo "BROADCOM_DETECTED=true"
+    else
+        echo "BROADCOM_DETECTED=false"
+    fi
+    exit 0
+fi
+
+if [ "$ACTION" == "check-secureboot" ]; then
+    if command -v mokutil &>/dev/null && mokutil --sb-state 2>/dev/null | grep -iq "enabled"; then
+        echo "SECUREBOOT_ENABLED=true"
+    else
+        echo "SECUREBOOT_ENABLED=false"
+    fi
+    exit 0
+fi
+
+if [ "$ACTION" == "enroll-mok" ]; then
+    PASSWORD="${2:-}"
+    if [ -z "$PASSWORD" ]; then
+        echo "Error: Password required for MOK enrollment." >&2
+        exit 1
+    fi
+    
+    # Ensure key generation tools are present
+    dnf install -y akmods mokutil openssl 2>/dev/null || true
+    
+    # Generate the Aether OS Machine Owner Key pair if it does not exist
+    if [ ! -f /etc/pki/akmods/certs/public_key.der ]; then
+        echo "Generating Aether OS Machine Owner Key..."
+        mkdir -p /etc/pki/akmods/certs
+        /usr/sbin/kmodgenca -a 2>/dev/null || true
+    fi
+    
+    # Pass the temporary password to mokutil to stage the key
+    if [ -f /etc/pki/akmods/certs/public_key.der ]; then
+        echo "Staging MOK for next boot..."
+        echo -e "$PASSWORD\n$PASSWORD" | mokutil --import /etc/pki/akmods/certs/public_key.der
+        echo "MOK Staged. A reboot is required."
+    else
+        echo "Error: Could not generate /etc/pki/akmods/certs/public_key.der" >&2
+        exit 1
+    fi
+    exit 0
+fi
+
+if [ "$ACTION" == "install" ]; then
+    echo "Enabling RPM Fusion repositories..."
+    dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm || true
+
+    if [ "$TARGET" == "nvidia" ]; then
+        echo "Installing Nvidia proprietary drivers..."
+        dnf update -y --refresh || true
+        dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda vulkan
+        echo "Nvidia drivers installed. Kernel modules compiling via akmods..."
+        akmods --force || true
+        echo "Nvidia driver installation completed."
+    elif [ "$TARGET" == "broadcom" ]; then
+        echo "Installing Broadcom Wi-Fi drivers..."
+        dnf install -y broadcom-wl akmods
+        akmods --force || true
+        echo "Broadcom drivers installed successfully."
+    fi
+    exit 0
+fi

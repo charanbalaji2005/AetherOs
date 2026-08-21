@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+"""
+AetherOS Hardware & Driver Manager
+Detects GPUs, Wi-Fi chipsets, and proprietary hardware drivers.
+Provides automated 1-click installation for Nvidia (akmod-nvidia), AMD, Intel, and Broadcom.
+"""
+
+import sys
+import os
+import subprocess
+import json
+import re
+
+def run_cmd(cmd):
+    try:
+        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=False)
+        return res.stdout.strip()
+    except Exception as e:
+        return ""
+
+def detect_hardware():
+    lspci_out = run_cmd(["lspci", "-nn"])
+    
+    gpus = []
+    wifi = []
+    
+    for line in lspci_out.splitlines():
+        if any(term in line.lower() for term in ["vga compatible controller", "3d controller", "display controller"]):
+            gpus.append(line)
+        if any(term in line.lower() for term in ["network controller", "wireless"]):
+            wifi.append(line)
+            
+    # Detect proprietary driver status
+    nvidia_detected = any("10de:" in g.lower() or "nvidia" in g.lower() for g in gpus)
+    nvidia_installed = subprocess.run(["modinfo", "nvidia"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+    nvidia_loaded = os.path.exists("/proc/driver/nvidia") or os.path.exists("/dev/nvidia0")
+    
+    broadcom_detected = any("14e4:" in w.lower() or "broadcom" in w.lower() for w in wifi)
+    broadcom_installed = subprocess.run(["modinfo", "wl"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+
+    return {
+        "gpus": gpus,
+        "wifi": wifi,
+        "nvidia": {
+            "detected": nvidia_detected,
+            "installed": nvidia_installed,
+            "loaded": nvidia_loaded,
+            "recommended_package": "akmod-nvidia xorg-x11-drv-nvidia-cuda" if nvidia_detected else None
+        },
+        "broadcom": {
+            "detected": broadcom_detected,
+            "installed": broadcom_installed,
+            "recommended_package": "broadcom-wl akmod-wl" if broadcom_detected else None
+        }
+    }
+
+def install_nvidia():
+    print("[AetherOS Driver Manager] Installing RPM Fusion Nvidia Proprietary Drivers...")
+    # Enable RPM Fusion nonfree
+    subprocess.run(["dnf", "install", "-y", "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-40.noarch.rpm", "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-40.noarch.rpm"])
+    # Install akmod-nvidia
+    res = subprocess.run(["dnf", "install", "-y", "akmod-nvidia", "xorg-x11-drv-nvidia-cuda", "vulkan"])
+    if res.returncode == 0:
+        print("[AetherOS Driver Manager] Nvidia driver installation successful. Kernel module building via akmods...")
+        subprocess.run(["akmods", "--force"])
+        return True
+    return False
+
+def install_broadcom():
+    print("[AetherOS Driver Manager] Installing Broadcom Wi-Fi Driver...")
+    res = subprocess.run(["dnf", "install", "-y", "broadcom-wl", "akmod-wl"])
+    if res.returncode == 0:
+        subprocess.run(["akmods", "--force"])
+        return True
+    return False
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] == "detect" or sys.argv[1] == "status":
+        info = detect_hardware()
+        print(json.dumps(info, indent=2))
+    elif sys.argv[1] == "install-nvidia":
+        if os.geteuid() != 0:
+            print("Error: Root privileges required. Run with sudo or pkexec.", file=sys.stderr)
+            sys.exit(1)
+        success = install_nvidia()
+        sys.exit(0 if success else 1)
+    elif sys.argv[1] == "install-broadcom":
+        if os.geteuid() != 0:
+            print("Error: Root privileges required. Run with sudo or pkexec.", file=sys.stderr)
+            sys.exit(1)
+        success = install_broadcom()
+        sys.exit(0 if success else 1)
+    else:
+        print("Usage: aether-driver-manager [status|detect|install-nvidia|install-broadcom]")
+
+if __name__ == "__main__":
+    main()

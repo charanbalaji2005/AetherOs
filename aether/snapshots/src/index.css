@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  font-family: "Outfit", "JetBrainsMono Nerd Font", "Inter", sans-serif;
+  background-color: #0a0a0f;
+  color: #f8f8f2;
+}

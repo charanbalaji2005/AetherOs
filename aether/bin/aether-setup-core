@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# /usr/local/bin/aether-setup-core
+# AetherOS Privileged First-Boot Configuration Engine
+# Handles user accounts, locale, keyboard layout, timezone, network scanning, and hostname setup
+set -euo pipefail
+
+ACTION="${1:-list-timezones}"
+
+if [ "$ACTION" == "list-timezones" ]; then
+    timedatectl list-timezones 2>/dev/null || echo -e "UTC\nAmerica/New_York\nEurope/London\nAsia/Tokyo"
+    exit 0
+fi
+
+if [ "$ACTION" == "scan-wifi" ]; then
+    # Rescan and list SSID, Signal Strength, and Security
+    if command -v nmcli &>/dev/null; then
+        nmcli -t -f SSID,SIGNAL,SECURITY dev wifi list --rescan yes 2>/dev/null | awk -F: '$1 != "" {print $1":"$2":"$3}' | sort -u || true
+    fi
+    exit 0
+fi
+
+if [ "$ACTION" == "connect-wifi" ]; then
+    SSID="${2:-}"
+    PASSWORD="${3:-}"
+    if [ -z "$SSID" ]; then
+        echo "Error: SSID required." >&2
+        exit 1
+    fi
+    if [ -z "$PASSWORD" ]; then
+        nmcli dev wifi connect "$SSID"
+    else
+        nmcli dev wifi connect "$SSID" password "$PASSWORD"
+    fi
+    exit $?
+fi
+
+if [ "$ACTION" == "apply-setup" ]; then
+    USERNAME="${2:-aether}"
+    PASSWORD="${3:-aether}"
+    FULLNAME="${4:-Aether User}"
+    TIMEZONE="${5:-UTC}"
+    HOSTNAME="${6:-aether-workstation}"
+    LANGUAGE="${7:-en_US.UTF-8}"
+    COUNTRY="${8:-us}"
+
+    # 1. Apply Language and Keyboard Layout
+    if command -v localectl &>/dev/null; then
+        localectl set-locale LANG="$LANGUAGE" 2>/dev/null || true
+        localectl set-x11-keymap "$COUNTRY" 2>/dev/null || true
+    fi
+
+    # 2. Set Timezone
+    if [ -n "$TIMEZONE" ] && command -v timedatectl &>/dev/null; then
+        timedatectl set-timezone "$TIMEZONE" 2>/dev/null || true
+    fi
+
+    # 3. Set Hostname
+    if command -v hostnamectl &>/dev/null; then
+        hostnamectl set-hostname "$HOSTNAME" 2>/dev/null || true
+    fi
+
+    # 4. Create the Real User Account
+    if ! id -u "$USERNAME" >/dev/null 2>&1; then
+        useradd -m -c "$FULLNAME" -G wheel,video,audio,input,docker -s /bin/zsh "$USERNAME" 2>/dev/null || useradd -m -c "$FULLNAME" -G wheel,video,audio,input -s /bin/bash "$USERNAME" 2>/dev/null || true
+        echo "$USERNAME:$PASSWORD" | chpasswd 2>/dev/null || true
+    else
+        echo "$USERNAME:$PASSWORD" | chpasswd 2>/dev/null || true
+    fi
+
+    # 5. Disable the temporary autologin so the real user logs in
+    rm -f /etc/sddm.conf.d/autologin.conf 2>/dev/null || true
+
+    # 6. Mark first-boot as complete
+    mkdir -p /var/lib
+    touch /var/lib/aether-setup-complete
+    echo "SETUP_SUCCESS"
+    exit 0
+fi

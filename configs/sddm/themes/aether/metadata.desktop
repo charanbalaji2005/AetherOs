@@ -1,0 +1,9 @@
+[SddmGreeterTheme]
+Name=Aether
+Description=Cyberpunk glassmorphism login for Aether OS
+Author=Charan Balaji
+Copyright=2026
+Type=sddm-theme
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf

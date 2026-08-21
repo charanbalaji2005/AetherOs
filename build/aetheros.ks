@@ -21,6 +21,7 @@ repo --name=rpmfusion-nonfree-steam --mirrorlist=https://mirrors.rpmfusion.org/m
 # Microsoft VS Code & Docker CE Repositories
 repo --name=vscode --baseurl=https://packages.microsoft.com/yumrepos/vscode
 repo --name=docker-ce --baseurl=https://download.docker.com/linux/fedora/$releasever/$basearch/stable
+repo --name=copr-kylegospo-grub-btrfs --baseurl=https://download.copr.fedorainfracloud.org/results/kylegospo/grub-btrfs/fedora-$releasever-$basearch/
 
 # --- Filesystem: Root partition ---
 zerombr
@@ -29,7 +30,7 @@ part /boot/efi --fstype=efi --size=600
 part /boot --fstype=ext4 --size=1024
 part / --fstype=btrfs --grow --size=15360
 
-bootloader --location=mbr --timeout=5
+bootloader --location=mbr --timeout=5 --append="rhgb quiet splash loglevel=3 vga=current"
 network --bootproto=dhcp --activate
 rootpw --lock
 user --name=aether --groups=wheel,audio,video,input --plaintext --password=aether
@@ -55,6 +56,7 @@ grub2-tools
 syslinux
 grubby
 btrfs-progs
+grub-btrfs
 ntfs-3g
 dosfstools
 e2fsprogs
@@ -65,6 +67,7 @@ systemd-udev
 kbd
 glibc-langpack-en
 dnf5
+libdnf5-plugin-actions
 flatpak
 podman
 curl
@@ -110,11 +113,16 @@ slurp
 wl-clipboard
 playerctl
 swaybg
+swww
 hyprpaper
 hyprlock
 hypridle
 hyprpolkitagent
 xorg-x11-server-Xwayland
+swaync
+udiskie
+cliphist
+python3-pywal
 dunst
 nautilus
 brightnessctl
@@ -439,11 +447,17 @@ HOME_URL="https://example.com"
 EOF
 
 # Set default Plymouth boot splash theme
-plymouth-set-default-theme aetheros-glow || true
+echo "=== Configuring Plymouth Boot Splash ==="
+plymouth-set-default-theme aether 2>/dev/null || true
+dracut -f --no-hostonly --regenerate-all 2>/dev/null || true
 
-# Mask services incompatible with Live environments
+# Mask services incompatible with Live environments & optimize boot speed
 systemctl mask systemd-homed.service 2>/dev/null || true
 systemctl mask systemd-journal-flush.service 2>/dev/null || true
+systemctl mask NetworkManager-wait-online.service 2>/dev/null || true
+systemctl disable NetworkManager-wait-online.service 2>/dev/null || true
+systemctl mask plymouth-quit-wait.service 2>/dev/null || true
+systemctl disable ModemManager.service 2>/dev/null || true
 
 # Ensure messagebus & system accounts exist
 getent group messagebus >/dev/null || groupadd -g 81 messagebus 2>/dev/null || true
@@ -481,5 +495,43 @@ if command -v flatpak >/dev/null 2>&1; then
   flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
   flatpak update --appstream -y 2>/dev/null || true
 fi
+
+# Live ISO Calamares Autostart
+mkdir -p /home/liveuser/.config/hypr/
+cat <<EOF > /home/liveuser/.config/hypr/hyprland.conf
+source = /etc/skel/.config/hypr/hyprland.conf
+exec-once = sudo calamares -d
+EOF
+chown -R liveuser:liveuser /home/liveuser/.config 2>/dev/null || true
+
+# Temporary Setup User for Out-Of-Box Experience (OOBE) Kiosk Mode
+useradd -m -s /bin/bash aether-setup 2>/dev/null || true
+mkdir -p /etc/sddm.conf.d/
+cat <<EOF > /etc/sddm.conf.d/autologin.conf
+[Autologin]
+User=aether-setup
+Session=hyprland
+EOF
+
+mkdir -p /home/aether-setup/.config/hypr/
+cat <<EOF > /home/aether-setup/.config/hypr/hyprland.conf
+monitor=,preferred,auto,1
+windowrulev2 = fullscreen, class:^(aether-welcome)$
+animations {
+    enabled = no
+}
+exec-once = /usr/local/bin/aether-welcome
+EOF
+chown -R aether-setup:aether-setup /home/aether-setup/.config 2>/dev/null || true
+
+# Configure grub-btrfs for Fedora Grub paths
+mkdir -p /etc/default
+cat <<EOF > /etc/default/grub-btrfs
+GRUB_BTRFS_GRUB_DIRNAME="/boot/grub2"
+GRUB_BTRFS_MKCONFIG=/sbin/grub2-mkconfig
+GRUB_BTRFS_SCRIPT_CHECK=grub2-script-check
+EOF
+
+systemctl enable grub-btrfs.path 2>/dev/null || true
 
 %end

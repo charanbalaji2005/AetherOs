@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# /usr/local/bin/aether-lid-handler
+# Handles laptop lid switch actions (Clamshell mode vs Suspend)
+set -euo pipefail
+
+# Count connected displays
+MONITOR_COUNT=$(hyprctl monitors 2>/dev/null | grep -c "Monitor" || echo 1)
+
+if [ "$MONITOR_COUNT" -gt 1 ]; then
+    # Clamshell mode: disable internal laptop screen if external monitor is active
+    hyprctl keyword monitor eDP-1, disable 2>/dev/null || true
+else
+    # Single monitor / standalone laptop: trigger sleep
+    systemctl suspend
+fi

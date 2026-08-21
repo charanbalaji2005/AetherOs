@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# /usr/local/bin/aether-firewall-core
+# Aether OS Security and Firewalld Engine
+set -euo pipefail
+
+ACTION="${1:-status}"
+
+if [ "$ACTION" == "status" ]; then
+    if systemctl is-active --quiet firewalld 2>/dev/null; then
+        ZONE=$(firewall-cmd --get-default-zone 2>/dev/null || echo "public")
+        PORTS=$(firewall-cmd --list-ports 2>/dev/null || echo "")
+        echo "ACTIVE|$ZONE|$PORTS"
+    else
+        echo "INACTIVE|none|none"
+    fi
+    exit 0
+fi
+
+if [ "$ACTION" == "toggle" ]; then
+    STATE="${2:-enable}"
+    if [ "$STATE" == "enable" ]; then
+        systemctl enable --now firewalld
+    else
+        systemctl disable --now firewalld
+    fi
+    exit 0
+fi
+
+if [ "$ACTION" == "preset" ]; then
+    PRESET="${2:-standard}"
+    # Ensure firewall is running before applying presets
+    systemctl start firewalld 2>/dev/null || true
+
+    if [ "$PRESET" == "standard" ]; then
+        # Default Fedora workstation behavior
+        firewall-cmd --set-default-zone=public
+        echo "Standard security profile applied."
+
+    elif [ "$PRESET" == "lockdown" ]; then
+        # Drop all incoming connections immediately
+        firewall-cmd --set-default-zone=drop
+        echo "Lockdown mode active. All incoming connections dropped."
+
+    elif [ "$PRESET" == "developer" ]; then
+        # Set to public and open common web dev ports
+        firewall-cmd --set-default-zone=public
+        firewall-cmd --add-port=80/tcp --permanent
+        firewall-cmd --add-port=443/tcp --permanent
+        firewall-cmd --add-port=3000/tcp --permanent
+        firewall-cmd --add-port=5173/tcp --permanent
+        firewall-cmd --add-port=8080/tcp --permanent
+        firewall-cmd --reload
+        echo "Developer profile applied. Web ports opened."
+    fi
+    exit 0
+fi
+
+if [ "$ACTION" == "port" ]; then
+    CMD="${2:-add}"
+    PORT="${3:-22/tcp}"
+    if [ "$CMD" == "add" ]; then
+        firewall-cmd --add-port="$PORT" --permanent
+    elif [ "$CMD" == "remove" ]; then
+        firewall-cmd --remove-port="$PORT" --permanent
+    fi
+    firewall-cmd --reload
+    exit 0
+fi

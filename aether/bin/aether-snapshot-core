@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# /usr/local/bin/aether-snapshot-core
+# AetherOS Privileged Btrfs Snapshots & Disaster Recovery Core
+set -euo pipefail
+
+ACTION="${1:-list}"
+NAME="${2:-}"
+POOL="/mnt/aether_pool"
+
+# Find the physical drive backing the root partition
+ROOT_DEV=$(findmnt -n -o SOURCE / 2>/dev/null || echo "/dev/sda3")
+
+cleanup() {
+    if mountpoint -q "$POOL" 2>/dev/null; then
+        umount "$POOL" 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT
+
+mkdir -p "$POOL"
+# Mount the absolute top-level of the Btrfs filesystem (subvolid=5)
+mount -t btrfs -o subvolid=5 "$ROOT_DEV" "$POOL" 2>/dev/null || true
+
+if [ "$ACTION" == "create" ]; then
+    if [ -z "$NAME" ]; then
+        NAME="snapshot-$(date +%Y%m%d-%H%M%S)"
+    fi
+    mkdir -p "$POOL/@snapshots"
+    # Take a read-only snapshot of the current root subvolume
+    btrfs subvolume snapshot -r "$POOL/@" "$POOL/@snapshots/$NAME"
+    echo "Snapshot $NAME created successfully."
+    
+    # Regenerate GRUB entries for grub-btrfs if available
+    if command -v grub2-mkconfig &>/dev/null && [ -d /boot/grub2 ]; then
+        grub2-mkconfig -o /boot/grub2/grub.cfg 2>/dev/null || true
+    fi
+
+elif [ "$ACTION" == "list" ]; then
+    # List all available snapshots
+    if [ -d "$POOL/@snapshots" ]; then
+        ls -1 "$POOL/@snapshots"
+    fi
+
+elif [ "$ACTION" == "restore" ]; then
+    if [ -z "$NAME" ]; then
+        echo "Error: Snapshot name required for restore." >&2
+        exit 1
+    fi
+    if [ ! -d "$POOL/@snapshots/$NAME" ]; then
+        echo "Error: Snapshot $NAME does not exist." >&2
+        exit 1
+    fi
+    # 1. Move the current broken root out of the way
+    mv "$POOL/@" "$POOL/@_broken_$(date +%s)"
+    
+    # 2. Create a read-write clone of the snapshot back to the main root target
+    btrfs subvolume snapshot "$POOL/@snapshots/$NAME" "$POOL/@"
+    echo "System staged for rollback to '$NAME'. Please reboot your system immediately."
+    
+    if command -v grub2-mkconfig &>/dev/null && [ -d /boot/grub2 ]; then
+        grub2-mkconfig -o /boot/grub2/grub.cfg 2>/dev/null || true
+    fi
+
+elif [ "$ACTION" == "delete" ]; then
+    if [ -n "$NAME" ] && [ -d "$POOL/@snapshots/$NAME" ]; then
+        btrfs subvolume delete "$POOL/@snapshots/$NAME"
+        echo "Snapshot $NAME deleted successfully."
+        if command -v grub2-mkconfig &>/dev/null && [ -d /boot/grub2 ]; then
+            grub2-mkconfig -o /boot/grub2/grub.cfg 2>/dev/null || true
+        fi
+    fi
+fi

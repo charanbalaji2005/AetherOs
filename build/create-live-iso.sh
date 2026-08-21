@@ -62,8 +62,18 @@ fi
 mkdir -p "$STAGING_DIR/rootfs/etc/skel/.config/dunst"
 install -Dm644 "$PROJECT_ROOT/configs/dunst/dunstrc" "$STAGING_DIR/rootfs/etc/skel/.config/dunst/dunstrc"
 
+mkdir -p "$STAGING_DIR/rootfs/etc/skel/.config/swaync"
+if [ -d "$PROJECT_ROOT/configs/swaync" ]; then
+    cp -rf "$PROJECT_ROOT/configs/swaync/"* "$STAGING_DIR/rootfs/etc/skel/.config/swaync/"
+fi
+
 mkdir -p "$STAGING_DIR/rootfs/etc/skel/.config/kitty"
 install -Dm644 "$PROJECT_ROOT/configs/kitty/kitty.conf" "$STAGING_DIR/rootfs/etc/skel/.config/kitty/kitty.conf"
+
+mkdir -p "$STAGING_DIR/rootfs/etc/skel/.config/wal/templates"
+if [ -d "$PROJECT_ROOT/configs/wal/templates" ]; then
+    cp -rf "$PROJECT_ROOT/configs/wal/templates/"* "$STAGING_DIR/rootfs/etc/skel/.config/wal/templates/"
+fi
 
 if [ -f "$PROJECT_ROOT/configs/mime/mimeapps.list" ]; then
     install -Dm644 "$PROJECT_ROOT/configs/mime/mimeapps.list" "$STAGING_DIR/rootfs/etc/skel/.config/mimeapps.list"
@@ -99,10 +109,22 @@ install -Dm755 "$PROJECT_ROOT/aether/bin/aether-desktop-overlay" "$STAGING_DIR/r
 install -Dm755 "$PROJECT_ROOT/aether/bin/aether-files"        "$STAGING_DIR/rootfs/usr/local/bin/aether-files"
 install -Dm755 "$PROJECT_ROOT/aether/bin/aether-powermenu"    "$STAGING_DIR/rootfs/usr/local/bin/aether-powermenu"
 install -Dm755 "$PROJECT_ROOT/aether/bin/aether-screenshot"   "$STAGING_DIR/rootfs/usr/local/bin/aether-screenshot"
+install -Dm755 "$PROJECT_ROOT/aether/bin/aether-appearance"   "$STAGING_DIR/rootfs/usr/local/bin/aether-appearance"
+install -Dm755 "$PROJECT_ROOT/aether/bin/aether-sync-sddm"     "$STAGING_DIR/rootfs/usr/local/bin/aether-sync-sddm"
+install -Dm755 "$PROJECT_ROOT/aether/bin/aether-lid-handler"   "$STAGING_DIR/rootfs/usr/local/bin/aether-lid-handler"
+install -Dm755 "$PROJECT_ROOT/aether/bin/aether-theme-manager" "$STAGING_DIR/rootfs/usr/local/bin/aether-theme-manager"
 install -Dm755 "$PROJECT_ROOT/aether/bin/aether-installer"    "$STAGING_DIR/rootfs/usr/local/bin/aether-installer"
+install -Dm755 "$PROJECT_ROOT/aether/driver-manager/aether-driver-manager" "$STAGING_DIR/rootfs/usr/local/bin/aether-driver-manager"
+install -Dm755 "$PROJECT_ROOT/aether/bin/aether-driver-core" "$STAGING_DIR/rootfs/usr/local/bin/aether-driver-core"
+install -Dm755 "$PROJECT_ROOT/aether/security-center/aether-security-center" "$STAGING_DIR/rootfs/usr/local/bin/aether-security-center"
+install -Dm755 "$PROJECT_ROOT/aether/bin/aether-firewall-core" "$STAGING_DIR/rootfs/usr/local/bin/aether-firewall-core"
+install -Dm755 "$PROJECT_ROOT/aether/snapshots/aether-snapshot-manager" "$STAGING_DIR/rootfs/usr/local/bin/aether-snapshots"
+install -Dm755 "$PROJECT_ROOT/aether/bin/aether-snapshot-core" "$STAGING_DIR/rootfs/usr/local/bin/aether-snapshot-core"
+install -Dm755 "$PROJECT_ROOT/aether/vpn/aether-vpn-manager" "$STAGING_DIR/rootfs/usr/local/bin/aether-vpn"
 install -Dm755 "$PROJECT_ROOT/aether/settings/aether-settings" "$STAGING_DIR/rootfs/usr/local/bin/aether-settings"
-install -Dm755 "$PROJECT_ROOT/aether/software-center/aether-software" "$STAGING_DIR/rootfs/usr/local/bin/aether-software"
+install -Dm755 "$PROJECT_ROOT/aether/software-center/aether-software-center" "$STAGING_DIR/rootfs/usr/local/bin/aether-software"
 install -Dm755 "$PROJECT_ROOT/aether/setup/aether-welcome"    "$STAGING_DIR/rootfs/usr/local/bin/aether-welcome"
+install -Dm755 "$PROJECT_ROOT/aether/bin/aether-setup-core"   "$STAGING_DIR/rootfs/usr/local/bin/aether-setup-core"
 install -Dm755 "$PROJECT_ROOT/aether/ai/aether-ai"            "$STAGING_DIR/rootfs/usr/local/bin/aether-ai"
 install -Dm755 "$PROJECT_ROOT/aether/battery/aether-battery-daemon"   "$STAGING_DIR/rootfs/usr/local/bin/aether-battery-daemon"
 install -Dm755 "$PROJECT_ROOT/aether/telemetry/aether-telemetry-daemon" "$STAGING_DIR/rootfs/usr/local/bin/aether-telemetry-daemon"
@@ -134,6 +156,18 @@ if [ -d "$PROJECT_ROOT/configs/polkit" ]; then
     chmod 644 "$STAGING_DIR/rootfs/etc/polkit-1/rules.d/"*.rules 2>/dev/null || true
 fi
 
+# DNF5 Action Hooks (Pre-transaction automatic snapshots)
+if [ -d "$PROJECT_ROOT/configs/dnf" ]; then
+    mkdir -p "$STAGING_DIR/rootfs/etc/dnf/libdnf5-plugins/actions.d"
+    cp -rf "$PROJECT_ROOT/configs/dnf/"* "$STAGING_DIR/rootfs/etc/dnf/libdnf5-plugins/actions.d/"
+fi
+
+# Kernel Sysctl Performance Tuning
+if [ -d "$PROJECT_ROOT/configs/kernel" ]; then
+    mkdir -p "$STAGING_DIR/rootfs/etc/sysctl.d"
+    cp -rf "$PROJECT_ROOT/configs/kernel/"* "$STAGING_DIR/rootfs/etc/sysctl.d/"
+fi
+
 # Wallpapers & Assets
 mkdir -p "$STAGING_DIR/rootfs/usr/share/backgrounds/aetheros"
 cp -r "$PROJECT_ROOT/assets/backgrounds/"* "$STAGING_DIR/rootfs/usr/share/backgrounds/aetheros/"
@@ -142,6 +176,25 @@ if [ -f "$PROJECT_ROOT/assets/avatar.png" ]; then
 fi
 if [ -f "$PROJECT_ROOT/assets/after_dark.png" ]; then
     cp -f "$PROJECT_ROOT/assets/after_dark.png" "$STAGING_DIR/rootfs/usr/share/backgrounds/aetheros/after_dark.png"
+fi
+
+# Plymouth Custom Boot Splash Theme
+mkdir -p "$STAGING_DIR/rootfs/usr/share/plymouth/themes/aether"
+if [ -d "$PROJECT_ROOT/configs/plymouth/aether" ]; then
+    cp -rf "$PROJECT_ROOT/configs/plymouth/aether/"* "$STAGING_DIR/rootfs/usr/share/plymouth/themes/aether/"
+fi
+if [ -f "$PROJECT_ROOT/assets/avatar.png" ]; then
+    cp -f "$PROJECT_ROOT/assets/avatar.png" "$STAGING_DIR/rootfs/usr/share/plymouth/themes/aether/watermark.png"
+fi
+
+# SDDM Cyberpunk Theme & Configuration
+if [ -d "$PROJECT_ROOT/configs/sddm/themes/aether" ]; then
+    mkdir -p "$STAGING_DIR/rootfs/usr/share/sddm/themes/aether"
+    cp -rf "$PROJECT_ROOT/configs/sddm/themes/aether/"* "$STAGING_DIR/rootfs/usr/share/sddm/themes/aether/"
+fi
+if [ -f "$PROJECT_ROOT/configs/sddm/10-theme.conf" ]; then
+    mkdir -p "$STAGING_DIR/rootfs/etc/sddm.conf.d"
+    cp -f "$PROJECT_ROOT/configs/sddm/10-theme.conf" "$STAGING_DIR/rootfs/etc/sddm.conf.d/10-theme.conf"
 fi
 
 # Applications & Sessions

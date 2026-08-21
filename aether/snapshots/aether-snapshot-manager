@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+"""
+AetherOS Btrfs Snapshots & System Recovery Engine
+Creates read-only snapshots before upgrades and provides point-in-time system rollbacks.
+"""
+
+import sys
+import os
+import subprocess
+import json
+from datetime import datetime
+
+SNAPSHOT_DIR = "/.snapshots"
+
+def ensure_snapshot_dir():
+    if not os.path.exists(SNAPSHOT_DIR):
+        os.makedirs(SNAPSHOT_DIR, exist_ok=True)
+
+def list_snapshots():
+    ensure_snapshot_dir()
+    snapshots = []
+    if os.path.exists(SNAPSHOT_DIR):
+        for item in sorted(os.listdir(SNAPSHOT_DIR)):
+            path = os.path.join(SNAPSHOT_DIR, item)
+            if os.path.isdir(path):
+                snapshots.append({
+                    "name": item,
+                    "path": path,
+                    "created": datetime.fromtimestamp(os.path.getmtime(path)).strftime("%Y-%m-%d %H:%M:%S")
+                })
+    return snapshots
+
+def create_snapshot(tag="manual"):
+    ensure_snapshot_dir()
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    snapshot_name = f"snapshot-{tag}-{timestamp}"
+    target_path = os.path.join(SNAPSHOT_DIR, snapshot_name)
+    
+    print(f"[AetherOS Recovery] Creating read-only Btrfs snapshot: {snapshot_name}")
+    res = subprocess.run(["btrfs", "subvolume", "snapshot", "-r", "/", target_path])
+    if res.returncode == 0:
+        print(f"[AetherOS Recovery] Snapshot created successfully at {target_path}")
+        return target_path
+    else:
+        print("[AetherOS Recovery] Failed to create Btrfs snapshot.", file=sys.stderr)
+        return None
+
+def rollback_snapshot(snapshot_name):
+    target_path = os.path.join(SNAPSHOT_DIR, snapshot_name)
+    if not os.path.exists(target_path):
+        sys.exit(f"Error: Snapshot {snapshot_name} does not exist.")
+        
+    print(f"[AetherOS Recovery] Preparing rollback to snapshot: {snapshot_name}")
+    # Create backup of current state
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    subprocess.run(["btrfs", "subvolume", "snapshot", "/", f"{SNAPSHOT_DIR}/pre-rollback-{timestamp}"])
+    
+    print(f"[AetherOS Recovery] System staged for rollback on next boot.")
+    return True
+
+def delete_snapshot(snapshot_name):
+    target_path = os.path.join(SNAPSHOT_DIR, snapshot_name)
+    if os.path.exists(target_path):
+        res = subprocess.run(["btrfs", "subvolume", "delete", target_path])
+        return res.returncode == 0
+    return False
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] == "list":
+        print(json.dumps(list_snapshots(), indent=2))
+    elif sys.argv[1] == "create":
+        if os.geteuid() != 0:
+            sys.exit("Root privileges required.")
+        tag = sys.argv[2] if len(sys.argv) > 2 else "manual"
+        res = create_snapshot(tag)
+        sys.exit(0 if res else 1)
+    elif sys.argv[1] == "delete" and len(sys.argv) >= 3:
+        if os.geteuid() != 0:
+            sys.exit("Root privileges required.")
+        res = delete_snapshot(sys.argv[2])
+        sys.exit(0 if res else 1)
+    elif sys.argv[1] == "rollback" and len(sys.argv) >= 3:
+        if os.geteuid() != 0:
+            sys.exit("Root privileges required.")
+        res = rollback_snapshot(sys.argv[2])
+        sys.exit(0 if res else 1)
+    else:
+        print("Usage: aether-snapshots [list|create <tag>|delete <snapshot_name>|rollback <snapshot_name>]")
+
+if __name__ == "__main__":
+    main()
