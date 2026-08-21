@@ -255,6 +255,8 @@ install -Dm755 "$SOURCE/aether/software-center/aether-software" "$TARGET/usr/loc
 install -Dm755 "$SOURCE/aether/setup/aether-welcome" "$TARGET/usr/local/bin/aether-welcome"
 install -Dm755 "$SOURCE/aether/ai/aether-ai" "$TARGET/usr/local/bin/aether-ai"
 install -Dm755 "$SOURCE/aether/battery/aether-battery-daemon" "$TARGET/usr/local/bin/aether-battery-daemon"
+install -Dm755 "$SOURCE/aether/telemetry/aether-telemetry-daemon" "$TARGET/usr/local/bin/aether-telemetry-daemon"
+install -Dm755 "$SOURCE/aether/update-engine/aether-update-engine" "$TARGET/usr/local/bin/aether-update-engine"
 install -Dm755 "$SOURCE/aether/update-engine/aether-updater" "$TARGET/usr/local/bin/aether-updater"
 install -Dm755 "$SOURCE/aether/bin/aether-splash" "$TARGET/usr/local/bin/aether-splash"
 install -Dm755 "$SOURCE/aether/bin/aether-desktop-overlay" "$TARGET/usr/local/bin/aether-desktop-overlay"
@@ -262,7 +264,10 @@ install -Dm755 "$SOURCE/aether/bin/aether-files" "$TARGET/usr/local/bin/aether-f
 install -Dm755 "$SOURCE/aether/bin/aether-powermenu" "$TARGET/usr/local/bin/aether-powermenu"
 install -Dm755 "$SOURCE/aether/bin/aether-screenshot" "$TARGET/usr/local/bin/aether-screenshot"
 install -Dm755 "$SOURCE/aether/setup/aether-firstboot" "$TARGET/usr/local/bin/aether-firstboot"
-install -Dm644 "$SOURCE/configs/systemd/aether-firstboot.service" "$TARGET/etc/systemd/system/aether-firstboot.service"
+install -Dm644 "$SOURCE/configs/systemd/aether-firstboot.service"     "$TARGET/etc/systemd/system/aether-firstboot.service"
+install -Dm644 "$SOURCE/configs/systemd/aether-battery.service"       "$TARGET/etc/systemd/system/aether-battery.service"
+install -Dm644 "$SOURCE/configs/systemd/aether-telemetry.service"     "$TARGET/etc/systemd/system/aether-telemetry.service"
+install -Dm644 "$SOURCE/configs/systemd/aether-update-engine.service" "$TARGET/etc/systemd/system/aether-update-engine.service"
 
 mkdir -p "$TARGET/usr/share/aetheros/desktop/widgets"
 cp -r "$SOURCE/desktop/widgets/"* "$TARGET/usr/share/aetheros/desktop/widgets/"
@@ -430,6 +435,9 @@ systemctl enable NetworkManager.service
 systemctl enable firewalld.service
 systemctl enable bluetooth.service
 systemctl enable power-profiles-daemon.service
+systemctl enable aether-battery.service 2>/dev/null || true
+systemctl enable aether-telemetry.service 2>/dev/null || true
+systemctl enable aether-update-engine.service 2>/dev/null || true
 systemctl enable mariadb.service 2>/dev/null || true
 systemctl enable podman.socket 2>/dev/null || true
 systemctl enable vmtoolsd.service 2>/dev/null || true

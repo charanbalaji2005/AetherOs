@@ -1,0 +1,16 @@
+[Unit]
+Description=AetherOS Hardware Telemetry and Diagnostics Daemon
+After=dbus.service
+Before=graphical.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/aether-telemetry-daemon
+Restart=always
+RestartSec=3
+User=root
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

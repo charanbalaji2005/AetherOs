@@ -1,0 +1,17 @@
+[Unit]
+Description=AetherOS Hardware Power & Battery Management Daemon
+After=dbus.service power-profiles-daemon.service
+Wants=power-profiles-daemon.service
+Before=graphical.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/aether-battery-daemon
+Restart=always
+RestartSec=3
+User=root
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

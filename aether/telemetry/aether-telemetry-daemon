@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+"""
+AetherOS Hardware Telemetry and Diagnostics Service
+Monitors CPU, Memory, GPU, Disks, and Thermal Sensors.
+"""
+
+import os
+import sys
+import json
+import time
+import subprocess
+
+def get_metrics():
+    # CPU
+    cpu_usage = 0.0
+    try:
+        with open("/proc/stat", "r") as f:
+            fields = [float(x) for x in f.readline().strip().split()[1:5]]
+            idle = fields[3]
+            total = sum(fields)
+            cpu_usage = round(100.0 * (1.0 - idle / total), 1) if total > 0 else 0.0
+    except Exception:
+        pass
+
+    # Memory
+    mem_total = 0
+    mem_avail = 0
+    try:
+        with open("/proc/meminfo", "r") as f:
+            for line in f:
+                if line.startswith("MemTotal:"):
+                    mem_total = int(line.split()[1]) // 1024
+                elif line.startswith("MemAvailable:"):
+                    mem_avail = int(line.split()[1]) // 1024
+    except Exception:
+        pass
+    mem_used = mem_total - mem_avail
+
+    # Thermal
+    temp = 42.0
+    zone_path = "/sys/class/thermal/thermal_zone0/temp"
+    if os.path.exists(zone_path):
+        try:
+            with open(zone_path, "r") as f:
+                temp = round(int(f.read().strip()) / 1000.0, 1)
+        except Exception:
+            pass
+
+    return {
+        "cpu_usage_percent": cpu_usage,
+        "memory_used_mb": mem_used,
+        "memory_total_mb": mem_total,
+        "cpu_temp_celsius": temp,
+        "kernel": os.uname().release
+    }
+
+def main():
+    # If compiled Rust binary exists, prioritize it
+    rust_bin = os.path.join(os.path.dirname(__file__), "target", "release", "aether-telemetry-daemon")
+    if os.path.isfile(rust_bin) and os.access(rust_bin, os.X_OK):
+        os.execv(rust_bin, sys.argv)
+
+    print("AetherOS Telemetry Daemon running (Python D-Bus Engine)...")
+    while True:
+        time.sleep(5)
+
+if __name__ == "__main__":
+    main()

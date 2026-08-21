@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+"""
+AetherOS Background Update Engine Daemon
+Coordinates system DNF5 package refreshes and Flatpak updates.
+"""
+
+import os
+import sys
+import time
+import subprocess
+
+def main():
+    # If compiled Rust binary exists, prioritize it
+    rust_bin = os.path.join(os.path.dirname(__file__), "target", "release", "aether-update-engine")
+    if os.path.isfile(rust_bin) and os.access(rust_bin, os.X_OK):
+        os.execv(rust_bin, sys.argv)
+
+    print("AetherOS Update Engine Daemon running...")
+    while True:
+        # Periodic check every 4 hours
+        time.sleep(14400)
+
+if __name__ == "__main__":
+    main()

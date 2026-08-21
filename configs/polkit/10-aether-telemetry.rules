@@ -1,0 +1,11 @@
+/* AetherOS Telemetry and System Diagnostics Polkit Policy */
+polkit.addRule(function(action, subject) {
+    if (subject.isInGroup("wheel")) {
+        if (
+            action.id.indexOf("com.aetheros.telemetryservice.") === 0 ||
+            action.id.indexOf("com.aetheros.TelemetryService.") === 0
+        ) {
+            return polkit.Result.YES;
+        }
+    }
+});

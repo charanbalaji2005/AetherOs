@@ -1,0 +1,16 @@
+[Unit]
+Description=AetherOS Background Update Engine Daemon
+After=dbus.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/aether-update-engine
+Restart=always
+RestartSec=10
+User=root
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

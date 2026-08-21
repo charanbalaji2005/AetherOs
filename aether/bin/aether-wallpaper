@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# AetherOS Dynamic Wallpaper Switcher Utility
+set -euo pipefail
+
+NEW_WP="${1:-/usr/share/backgrounds/aetheros/sunset_mountains.png}"
+
+if [ ! -f "$NEW_WP" ]; then
+    echo "Error: Image file not found: $NEW_WP" >&2
+    exit 1
+fi
+
+# 1. If swaybg is running, update swaybg seamlessly
+if pgrep -x swaybg >/dev/null 2>&1; then
+    pkill -x swaybg || true
+    swaybg -i "$NEW_WP" -m fill >/dev/null 2>&1 &
+fi
+
+# 2. If hyprpaper is running, use hyprctl IPC
+if pgrep -x hyprpaper >/dev/null 2>&1; then
+    hyprctl hyprpaper preload "$NEW_WP" || true
+    MONITORS=$(hyprctl monitors 2>/dev/null | grep "Monitor " | awk '{print $2}' || true)
+    if [ -n "$MONITORS" ]; then
+        for m in $MONITORS; do
+            hyprctl hyprpaper wallpaper "$m,$NEW_WP" || true
+        done
+    else
+        hyprctl hyprpaper wallpaper ",$NEW_WP" || true
+    fi
+    hyprctl hyprpaper unload all 2>/dev/null || true
+fi
+
+# Save preference
+mkdir -p "$HOME/.config/aether"
+echo "$NEW_WP" > "$HOME/.config/aether/current_wallpaper"
+
+notify-send -a "AetherOS" -i "$NEW_WP" "Wallpaper Updated" "Applied $(basename "$NEW_WP")" 2>/dev/null || true

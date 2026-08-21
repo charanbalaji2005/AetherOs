@@ -36,7 +36,15 @@ sleep 1
 losetup -D 2>/dev/null || true
 sync
 
-echo "[2/5] Generating Kickstart configuration from template..."
+echo "[2/5] Compiling Rust Daemons & Generating Kickstart configuration..."
+if command -v cargo >/dev/null 2>&1; then
+    for d in "$PROJECT_ROOT/aether/battery" "$PROJECT_ROOT/aether/telemetry" "$PROJECT_ROOT/aether/update-engine"; do
+        if [ -f "$d/Cargo.toml" ]; then
+            (cd "$d" && cargo build --release 2>/dev/null || true)
+        fi
+    done
+fi
+
 sed "s|__AETHER_SOURCE__|$PROJECT_ROOT|g" \
     "$KS_TEMPLATE" > "$KS_GENERATED"
 

@@ -317,10 +317,10 @@ Relogin=false
 """)
 
 def apply_user_account(username, password="", password_hash=""):
-    """Create or update user account with wheel, audio, video, input, render groups."""
-    groups = "wheel,audio,video,input"
-    if subprocess.run(["getent", "group", "render"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
-        groups += ",render"
+    groups = "wheel,audio,video,input,storage,network,dialout,systemd-journal"
+    for opt_group in ["docker", "render", "kvm"]:
+        if subprocess.run(["getent", "group", opt_group], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+            groups += f",{opt_group}"
 
     user_exists = (subprocess.run(["id", username], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0)
     if user_exists:

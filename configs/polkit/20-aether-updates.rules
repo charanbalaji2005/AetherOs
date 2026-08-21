@@ -1,0 +1,11 @@
+/* AetherOS Update Engine D-Bus Polkit Policy */
+polkit.addRule(function(action, subject) {
+    if (
+        (action.id == "org.aetheros.UpdateEngine.apply_updates" ||
+         action.id == "org.aetheros.UpdateEngine.check_updates" ||
+         action.id.indexOf("org.aetheros.UpdateEngine.") === 0) &&
+        subject.isInGroup("wheel")
+    ) {
+        return polkit.Result.YES;
+    }
+});

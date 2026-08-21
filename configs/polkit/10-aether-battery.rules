@@ -1,0 +1,13 @@
+/* AetherOS Battery & Power Management Polkit Policy */
+polkit.addRule(function(action, subject) {
+    if (subject.isInGroup("wheel")) {
+        if (
+            action.id === "com.aetheros.batteryservice.setgovernor" ||
+            action.id === "com.aetheros.batteryservice.setpowerprofile" ||
+            action.id.indexOf("com.aetheros.BatteryService.") === 0 ||
+            action.id.indexOf("org.freedesktop.power-profiles-daemon.") === 0
+        ) {
+            return polkit.Result.YES;
+        }
+    }
+});
