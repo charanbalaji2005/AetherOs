@@ -1,28 +1,32 @@
-// AetherOS Cyberpunk Waybar config
-// High-end glassmorphic top bar with purple accents and real hardware telemetry
+// AetherOS - Fedora-style Top Bar with Cyber-Glass Aesthetic
 {
     "layer": "top",
     "position": "top",
-    "height": 36,
-    "margin-top": 8,
-    "margin-left": 14,
-    "margin-right": 14,
-    "spacing": 6,
+    "height": 32,
+    "margin-top": 0,
+    "margin-left": 0,
+    "margin-right": 0,
+    "spacing": 4,
 
-    "modules-left": ["custom/logo", "hyprland/workspaces"],
-    "modules-center": ["clock"],
+    "modules-left": [
+        "custom/activities",
+        "hyprland/workspaces"
+    ],
+    "modules-center": [
+        "clock"
+    ],
     "modules-right": [
-        "battery",
-        "cpu",
-        "memory",
         "pulseaudio",
         "network",
+        "cpu",
+        "memory",
+        "battery",
         "custom/power"
     ],
 
-    "custom/logo": {
-        "format": "󰢻 Hyprland",
-        "tooltip-format": "AetherOS Hyprland Desktop",
+    "custom/activities": {
+        "format": "󰢻 Activities",
+        "tooltip-format": "Open Application Grid (Super+Space)",
         "on-click": "wofi --show drun"
     },
 
@@ -31,20 +35,13 @@
         "on-click": "activate",
         "all-outputs": true,
         "persistent-workspaces": {
-            "*": 5
+            "*": 4
         }
     },
 
     "clock": {
-        "format": "{:%b %d | %I:%M %p}",
+        "format": "{:%a %b %d  %I:%M %p}",
         "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
-    },
-
-    "battery": {
-        "format": "{capacity}% 󰁹",
-        "format-charging": "{capacity}% 󰂄",
-        "states": { "warning": 20, "critical": 10 },
-        "interval": 5
     },
 
     "cpu": {
@@ -60,19 +57,26 @@
     },
 
     "pulseaudio": {
-        "format": "{volume}% 󰕾",
-        "format-muted": "muted 󰖁",
+        "format": "󰕾 {volume}%",
+        "format-muted": "󰖁 Muted",
         "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
         "on-scroll-up": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+",
         "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
     },
 
     "network": {
-        "format-wifi": "󰤨",
-        "format-ethernet": "󰈀",
-        "format-disconnected": "󰤭",
+        "format-wifi": "󰤨 {essid}",
+        "format-ethernet": "󰈀 Online",
+        "format-disconnected": "󰤭 Disconnected",
         "tooltip-format-wifi": "{essid} ({signalStrength}%)",
         "on-click": "nm-connection-editor"
+    },
+
+    "battery": {
+        "format": "{capacity}% 󰁹",
+        "format-charging": "{capacity}% 󰂄",
+        "states": { "warning": 20, "critical": 10 },
+        "interval": 5
     },
 
     "custom/power": {

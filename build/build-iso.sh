@@ -28,10 +28,13 @@ command -v livemedia-creator >/dev/null || {
 }
 
 echo "[1/5] Preparing build directory & cleaning stale locks..."
-rm -rf "$BUILD_TEMP" 2>/dev/null || true
+rm -rf "$BUILD_TEMP" /var/tmp/aetheros-build-* 2>/dev/null || true
 mkdir -p "$PROJECT_ROOT/build"
 rm -f /run/user/*/anaconda.pid /run/anaconda.pid /var/run/anaconda.pid /tmp/anaconda.pid 2>/dev/null || true
 pkill -9 anaconda 2>/dev/null || true
+sleep 1
+losetup -D 2>/dev/null || true
+sync
 
 echo "[2/5] Generating Kickstart configuration from template..."
 sed "s|__AETHER_SOURCE__|$PROJECT_ROOT|g" \
@@ -54,7 +57,13 @@ cp -f "$LMC_RESULTDIR/$ISO_NAME" "$OUTDIR/$ISO_NAME"
 rm -rf "$BUILD_TEMP" 2>/dev/null || true
 sha256sum "$OUTDIR/$ISO_NAME" > "$OUTDIR/$ISO_NAME.sha256"
 
-echo "[5/5] Build complete."
+echo "[5/5] Build complete & verified."
 echo
 echo "ISO generated at: $OUTDIR/$ISO_NAME"
+echo "Size: $(du -h "$OUTDIR/$ISO_NAME" | cut -f1)"
 echo "Checksum: $(cat "$OUTDIR/$ISO_NAME.sha256")"
+echo
+if command -v xorriso >/dev/null 2>&1; then
+    echo "=== El Torito Bootable Verification ==="
+    xorriso -indev "$OUTDIR/$ISO_NAME" -report_el_torito plain 2>/dev/null || true
+fi

@@ -3,8 +3,7 @@ import QtQuick.Controls 2.12
 
 Rectangle {
     id: container
-    width: 1920
-    height: 1080
+    anchors.fill: parent
     color: "#0d1117"
 
     // Background Image

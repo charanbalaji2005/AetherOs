@@ -1,120 +1,141 @@
-/* AetherOS Cyberpunk Glassmorphic Waybar Theme */
+/* AetherOS - Fedora Workstation Cyber-Glass Top Bar Theme */
 
 * {
-    font-family: "Outfit", "JetBrainsMono Nerd Font", "Segoe UI", sans-serif;
+    font-family: "Inter", "Outfit", "Segoe UI", "JetBrainsMono Nerd Font", sans-serif;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     min-height: 0;
     margin: 0;
     padding: 0;
 }
 
 window#waybar {
-    background: rgba(13, 17, 23, 0.72);
-    border-radius: 10px;
-    border: 1px solid rgba(157, 78, 221, 0.45);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(157, 78, 221, 0.15);
+    background: rgba(14, 18, 28, 0.92);
+    border-bottom: 1px solid rgba(0, 240, 255, 0.25);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     color: #e6f1f5;
 }
 
-#custom-logo {
-    color: #56d4dd;
+#custom-activities {
+    color: #00f0ff;
     font-weight: 700;
-    font-size: 14px;
-    padding: 0 12px;
-    margin: 4px 6px;
-    border-radius: 6px;
-    background: rgba(86, 212, 221, 0.12);
-    border: 1px solid rgba(86, 212, 221, 0.3);
+    font-size: 13px;
+    padding: 2px 14px;
+    margin: 3px 6px;
+    border-radius: 16px;
+    background: rgba(0, 240, 255, 0.12);
+    border: 1px solid rgba(0, 240, 255, 0.35);
+    transition: all 0.2s ease-in-out;
 }
 
-#custom-logo:hover {
-    background: rgba(86, 212, 221, 0.25);
+#custom-activities:hover {
+    background: rgba(0, 240, 255, 0.25);
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
 }
 
 #workspaces {
-    background: rgba(0, 0, 0, 0.35);
-    margin: 4px 4px;
+    background: rgba(255, 255, 255, 0.05);
+    margin: 3px 4px;
     padding: 2px 4px;
-    border-radius: 6px;
+    border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 #workspaces button {
-    padding: 0 8px;
+    padding: 1px 9px;
     color: #8b949e;
-    border-radius: 4px;
+    border-radius: 12px;
     font-weight: 600;
     transition: all 0.2s ease;
 }
 
 #workspaces button:hover {
     color: #ffffff;
-    background: rgba(157, 78, 221, 0.25);
+    background: rgba(168, 85, 247, 0.2);
 }
 
 #workspaces button.active {
     color: #ffffff;
-    background: linear-gradient(135deg, #7b2cbf, #9d4edd);
-    box-shadow: 0 0 10px rgba(157, 78, 221, 0.6);
+    background: linear-gradient(135deg, #00f0ff, #a855f7);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
 }
 
 #clock {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
-    color: #ffffff;
-    background: rgba(0, 0, 0, 0.35);
-    padding: 4px 14px;
-    margin: 4px 0;
-    border-radius: 6px;
+    color: #f0f6fc;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 16px;
+    margin: 3px 0;
+    border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.2s ease;
+}
+
+#clock:hover {
+    background: rgba(255, 255, 255, 0.12);
 }
 
 #cpu,
 #memory,
 #battery,
 #pulseaudio,
-#network {
-    padding: 0 10px;
-    margin: 4px 2px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.04);
+#network,
+#custom-power {
+    padding: 2px 10px;
+    margin: 3px 2px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     color: #e6f1f5;
+    transition: all 0.2s ease;
+}
+
+#pulseaudio:hover,
+#network:hover,
+#battery:hover,
+#cpu:hover,
+#memory:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+#network {
+    color: #00f0ff;
+}
+
+#pulseaudio {
+    color: #38bdf8;
 }
 
 #cpu {
-    color: #c77dff;
+    color: #c084fc;
 }
 
 #memory {
-    color: #56d4dd;
+    color: #e879f9;
 }
 
 #battery {
-    color: #57e389;
+    color: #4ade80;
 }
 
 #battery.warning {
-    color: #f5d76e;
+    color: #facc15;
 }
 
 #battery.critical {
-    color: #ff6b6b;
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.2);
 }
 
 #custom-power {
-    background: rgba(255, 107, 107, 0.15);
-    border: 1px solid rgba(255, 107, 107, 0.35);
-    color: #ff6b6b;
-    padding: 0 10px;
-    margin: 4px 4px 4px 2px;
-    border-radius: 6px;
-    font-size: 14px;
+    color: #f43f5e;
+    padding: 2px 10px;
+    background: rgba(244, 63, 94, 0.15);
+    border: 1px solid rgba(244, 63, 94, 0.3);
 }
 
 #custom-power:hover {
-    background: #ff6b6b;
-    color: #ffffff;
-    box-shadow: 0 0 10px rgba(255, 107, 107, 0.6);
+    background: rgba(244, 63, 94, 0.35);
+    box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
 }

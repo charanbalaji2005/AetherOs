@@ -16,6 +16,7 @@ repo --name=rpmfusion-free --mirrorlist=https://mirrors.rpmfusion.org/mirrorlist
 repo --name=rpmfusion-free-updates --mirrorlist=https://mirrors.rpmfusion.org/mirrorlist?repo=free-fedora-updates-released-$releasever&arch=$basearch
 repo --name=rpmfusion-nonfree --mirrorlist=https://mirrors.rpmfusion.org/mirrorlist?repo=nonfree-fedora-$releasever&arch=$basearch
 repo --name=rpmfusion-nonfree-updates --mirrorlist=https://mirrors.rpmfusion.org/mirrorlist?repo=nonfree-fedora-updates-released-$releasever&arch=$basearch
+repo --name=rpmfusion-nonfree-steam --mirrorlist=https://mirrors.rpmfusion.org/mirrorlist?repo=nonfree-fedora-steam-$releasever&arch=$basearch
 
 # Microsoft VS Code & Docker CE Repositories
 repo --name=vscode --baseurl=https://packages.microsoft.com/yumrepos/vscode
@@ -48,6 +49,10 @@ dracut-network
 dracut-config-generic
 grub2-efi-x64
 shim-x64
+grub2-pc
+grub2-pc-modules
+grub2-tools
+syslinux
 grubby
 btrfs-progs
 ntfs-3g
@@ -108,7 +113,7 @@ nautilus
 brightnessctl
 kitty
 sddm
-polkit-kde-agent-1
+polkit-kde
 pipewire
 pipewire-pulseaudio
 wireplumber
@@ -126,13 +131,13 @@ mesa-dri-drivers
 mesa-vulkan-drivers
 xorg-x11-drv-amdgpu
 xorg-x11-drv-intel
-intel-media-driver
+libva-intel-media-driver
 libva-utils
 vulkan-tools
 vulkan-loader
 
 # --- Complete Fedora Workstation Core Tools & CLI Utilities ---
-wget
+wget2-wget
 htop
 btop
 fastfetch
@@ -174,7 +179,7 @@ ffmpeg-free
 
 # --- Premium Modern Fonts ---
 fira-code-fonts
-fontawesome-fonts
+fontawesome-fonts-all
 google-noto-sans-fonts
 google-noto-color-emoji-fonts
 
@@ -212,30 +217,20 @@ set -eux
 SOURCE="__AETHER_SOURCE__"
 TARGET="$INSTALL_ROOT"
 
-# Aether CLI
-install -Dm755 \
-    "$SOURCE/aether/bin/aether" \
-    "$TARGET/usr/local/bin/aether"
-
-# Aether Settings
-install -Dm755 \
-    "$SOURCE/aether/settings/aether-settings" \
-    "$TARGET/usr/local/bin/aether-settings"
-
-# Aether Desktop Startup Splash Screen
-install -Dm755 \
-    "$SOURCE/aether/bin/aether-splash" \
-    "$TARGET/usr/local/bin/aether-splash"
-
-# Aether Cyberpunk Desktop Overlay Launcher & Widgets Suite
-install -Dm755 \
-    "$SOURCE/aether/bin/aether-desktop-overlay" \
-    "$TARGET/usr/local/bin/aether-desktop-overlay"
+# Aether CLI, GUI Settings, Splash, Desktop Overlay, Files, PowerMenu, Screenshot, and First-Boot
+install -Dm755 "$SOURCE/aether/bin/aether" "$TARGET/usr/local/bin/aether"
+install -Dm755 "$SOURCE/aether/settings/aether-settings" "$TARGET/usr/local/bin/aether-settings"
+install -Dm755 "$SOURCE/aether/bin/aether-splash" "$TARGET/usr/local/bin/aether-splash"
+install -Dm755 "$SOURCE/aether/bin/aether-desktop-overlay" "$TARGET/usr/local/bin/aether-desktop-overlay"
+install -Dm755 "$SOURCE/aether/bin/aether-files" "$TARGET/usr/local/bin/aether-files"
+install -Dm755 "$SOURCE/aether/bin/aether-powermenu" "$TARGET/usr/local/bin/aether-powermenu"
+install -Dm755 "$SOURCE/aether/bin/aether-screenshot" "$TARGET/usr/local/bin/aether-screenshot"
+install -Dm755 "$SOURCE/aether/setup/aether-firstboot" "$TARGET/usr/local/bin/aether-firstboot"
+install -Dm644 "$SOURCE/configs/systemd/aether-firstboot.service" "$TARGET/etc/systemd/system/aether-firstboot.service"
 
 mkdir -p "$TARGET/usr/share/aetheros/desktop/widgets"
 cp -r "$SOURCE/desktop/widgets/"* "$TARGET/usr/share/aetheros/desktop/widgets/"
 
-# Aether First-Boot Setup Wizard
 mkdir -p "$TARGET/usr/share/aetheros/desktop/files"
 cp -r "$SOURCE/desktop/files/"* "$TARGET/usr/share/aetheros/desktop/files/"
 

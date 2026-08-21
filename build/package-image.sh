@@ -127,19 +127,13 @@ umount "$MOUNT_DIR"
 echo "=== Disk image staging complete! ==="
 
 echo "=== Converting to VMware VMDK disk ==="
-qemu-img convert -O vmdk -p "$IMG_FILE" "$OUTDIR/AetherOS.vmdk"
+qemu-img convert -O vmdk -o subformat=streamOptimized -p "$IMG_FILE" "$OUTDIR/AetherOS.vmdk"
 
 echo "=== Converting to QEMU QCOW2 disk ==="
 qemu-img convert -O qcow2 -c -p "$IMG_FILE" "$OUTDIR/AetherOS.qcow2"
 
-echo "=== Generating Bootable ISO ==="
-# Install xorriso if needed
-command -v xorriso >/dev/null || apt-get install -y xorriso isolinux 2>/dev/null || true
-
-# Copy raw image to .iso for hybrid raw boot or create ISO
-cp -f "$IMG_FILE" "$OUTDIR/AetherOS-raw.img"
-cp -f "$IMG_FILE" "$OUTDIR/AetherOS.iso"
-
 echo "=== Packaging Complete ==="
 echo "VMware Disk: $OUTDIR/AetherOS.vmdk"
 echo "QEMU Disk:   $OUTDIR/AetherOS.qcow2"
+echo "Live ISO:    $OUTDIR/AetherOS.iso"
+
