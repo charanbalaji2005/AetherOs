@@ -1,31 +1,31 @@
-// AetherOS - Minimalist Bottom Floating Dock Pill (Reference Image 1)
 {
     "layer": "top",
-    "position": "bottom",
-    "height": 44,
-    "margin-bottom": 12,
+    "position": "top",
+    "height": 40,
     "spacing": 8,
-
+    "margin-top": 8,
+    "margin-left": 12,
+    "margin-right": 12,
     "modules-left": [
-        "custom/launcher",
-        "hyprland/workspaces"
+        "hyprland/workspaces",
+        "group/quicklinks",
+        "cava",
+        "mpris",
+        "hyprland/window"
     ],
     "modules-center": [
-        "wlr/taskbar"
+        "clock"
     ],
     "modules-right": [
-        "pulseaudio",
+        "tray",
+        "cpu",
+        "memory",
         "network",
+        "bluetooth",
+        "pulseaudio",
         "battery",
-        "clock",
-        "custom/power"
+        "custom/powermenu"
     ],
-
-    "custom/launcher": {
-        "format": "󰢻",
-        "tooltip-format": "Open Application Launcher (Super+Space)",
-        "on-click": "rofi -show drun || wofi --show drun"
-    },
 
     "hyprland/workspaces": {
         "format": "{icon}",
@@ -37,65 +37,172 @@
             "active": "󰄰",
             "default": "󰄯"
         },
-        "on-click": "activate",
+        "tooltip": true,
+        "tooltip-format": "Workspace {name}\n• Scroll up/down to switch workspaces",
+        "on-scroll-up": "hyprctl dispatch workspace e+1",
+        "on-scroll-down": "hyprctl dispatch workspace e-1",
         "all-outputs": true,
         "persistent-workspaces": {
             "*": 4
         }
     },
 
-    "wlr/taskbar": {
-        "format": "{icon}",
-        "icon-size": 22,
-        "icon-theme": "Papirus-Dark",
-        "tooltip-format": "{title}",
-        "on-click": "activate",
-        "on-click-middle": "close",
-        "ignore-list": [
-            "AetherOS Splash",
-            "Aether Power Menu"
+    // --- QUICK LAUNCH DOCK ---
+    "group/quicklinks": {
+        "orientation": "horizontal",
+        "modules": [
+            "custom/browser",
+            "custom/filemanager",
+            "custom/terminal",
+            "custom/settings"
         ]
     },
 
-    "pulseaudio": {
-        "format": "{icon}",
-        "format-muted": "󰝟",
-        "format-icons": {
-            "default": ["󰕿", "󰖀", "󰕾"]
+    "custom/browser": {
+        "format": "󰈹",
+        "tooltip": true,
+        "tooltip-format": "Firefox Web Browser (Super+B)",
+        "on-click": "firefox"
+    },
+
+    "custom/filemanager": {
+        "format": "󰉋",
+        "tooltip": true,
+        "tooltip-format": "Thunar File Manager (Super+E)",
+        "on-click": "thunar || aether-files"
+    },
+
+    "custom/terminal": {
+        "format": "󰞷",
+        "tooltip": true,
+        "tooltip-format": "Kitty GPU Terminal (Super+Return)",
+        "on-click": "kitty"
+    },
+
+    "custom/settings": {
+        "format": "󰒓",
+        "tooltip": true,
+        "tooltip-format": "AetherOS Settings & Control Center (Super+I)",
+        "on-click": "aether-settings"
+    },
+
+    // --- ACTIVE WINDOW ---
+    "hyprland/window": {
+        "format": "{}",
+        "max-length": 35,
+        "separate-outputs": true
+    },
+
+    // --- AUDIO VISUALIZER WAVES ---
+    "cava": {
+        "framerate": 30,
+        "autosens": 1,
+        "bars": 12,
+        "lower_cutoff_freq": 50,
+        "higher_cutoff_freq": 10000,
+        "method": "pipewire",
+        "source": "auto",
+        "stereo": true,
+        "bar_delimiter": 0,
+        "noise_reduction": 0.77,
+        "input_delay": 2,
+        "format-icons" : [" ", "▂", "▃", "▄", "▅", "▆", "▇", "█" ],
+        "hide_on_silence": true
+    },
+
+    // --- MEDIA PLAYER TRACK NAME ---
+    "mpris": {
+        "format": "{player_icon} {dynamic}",
+        "format-paused": " <i>{dynamic}</i>",
+        "dynamic-order": ["title", "artist"],
+        "max-length": 30,
+        "player-icons": {
+            "default": "🎵",
+            "mpv": "🎵",
+            "spotify": "",
+            "firefox": "󰈹"
         },
-        "on-click": "pavucontrol",
-        "tooltip-format": "Volume: {volume}%"
+        "status-icons": {
+            "paused": "⏸"
+        }
+    },
+
+    "cpu": {
+        "format": "󰍛 {usage}%",
+        "interval": 2,
+        "tooltip": true,
+        "tooltip-format": "CPU Usage: {usage}%\nClick to open System Monitor (btop)",
+        "on-click": "kitty -e btop || kitty -e htop"
+    },
+
+    "memory": {
+        "format": "󰘚 {percentage}%",
+        "interval": 3,
+        "tooltip": true,
+        "tooltip-format": "RAM Usage: {used:0.1f}GiB / {total:0.1f}GiB ({percentage}%)\nClick to optimize system cache",
+        "on-click": "sync"
+    },
+
+    "clock": {
+        "format": "󰥔 {:%I:%M %p}",
+        "tooltip": true,
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>\n\nClick to view full calendar",
+        "on-click": "gnome-calendar || true"
+    },
+
+    "tray": {
+        "icon-size": 18,
+        "spacing": 10,
+        "tooltip": true,
+        "tooltip-format": "System Tray\nRunning background applications"
     },
 
     "network": {
-        "format-wifi": "󰤨",
-        "format-ethernet": "󰈀",
-        "format-disconnected": "󰤭",
-        "tooltip-format-wifi": "{essid} ({signalStrength}%)",
-        "tooltip-format-ethernet": "Wired ({ipaddr})",
+        "format-wifi": "󰤨 {signalStrength}%",
+        "format-ethernet": "󰈀 Wired",
+        "format-disconnected": "󰤭 Offline",
+        "tooltip-format-wifi": "Network: {essid}\nSignal: {signalStrength}%\nIP: {ipaddr}\n\nClick to configure Wi-Fi connections",
+        "tooltip-format-ethernet": "Ethernet Connection: {ipaddr}\nClick to configure Network",
+        "tooltip-format-disconnected": "Network Offline\nClick to scan and connect",
         "on-click": "nm-connection-editor"
+    },
+
+    "bluetooth": {
+        "format": "󰂯 {status}",
+        "format-connected": "󰂱 {num_connections} connected",
+        "tooltip-format": "Bluetooth: {status}\nClick to open Bluetooth Manager",
+        "tooltip-format-connected": "Connected Devices:\n{device_enumerate}\n\nClick to manage Bluetooth devices",
+        "on-click": "blueman-manager"
+    },
+
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-muted": "󰝟 Muted",
+        "format-icons": {
+            "default": ["󰕿", "󰖀", "󰕾"]
+        },
+        "tooltip-format": "Current Volume: {volume}%\n• Scroll up/down to adjust\n• Left-click to toggle Mute\n• Right-click for Audio Mixer (pavucontrol)",
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-click-right": "pavucontrol"
     },
 
     "battery": {
         "states": {
-            "warning": 25,
-            "critical": 10
+            "warning": 30,
+            "critical": 15
         },
-        "format": "{icon}",
-        "format-charging": "󰂄",
-        "format-plugged": "󰂄",
+        "format": "{icon} {capacity}%",
+        "format-charging": "󰂄 {capacity}%",
+        "format-plugged": "󰂄 {capacity}%",
         "format-icons": ["󰁺", "󰁼", "󰁾", "󰂀", "󰁹"],
-        "tooltip-format": "{capacity}% ({time})"
+        "tooltip-format": "Battery Level: {capacity}%\nTime Remaining: {time}\n\nClick to open Power/Governor Settings",
+        "on-click": "aether-settings || true"
     },
 
-    "clock": {
-        "format": "{:%I:%M %p}",
-        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
-    },
-
-    "custom/power": {
+    "custom/powermenu": {
         "format": "⏻",
-        "tooltip-format": "Power Menu (Super+Escape)",
+        "tooltip": true,
+        "tooltip-format": "AetherOS Power Control\n\nActions:\n• Lock Screen (K)\n• Sleep / Suspend (S)\n• Hibernate (H)\n• Log Out (L)\n• Restart (R)\n• Shut Down (P)\n\nShortcut: Super + Esc",
         "on-click": "aether-powermenu"
     }
 }

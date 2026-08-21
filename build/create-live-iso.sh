@@ -55,8 +55,8 @@ install -Dm644 "$PROJECT_ROOT/configs/wofi/config" "$STAGING_DIR/rootfs/etc/skel
 install -Dm644 "$PROJECT_ROOT/configs/wofi/style.css" "$STAGING_DIR/rootfs/etc/skel/.config/wofi/style.css"
 
 mkdir -p "$STAGING_DIR/rootfs/etc/skel/.config/rofi"
-if [ -f "$PROJECT_ROOT/configs/rofi/config.rasi" ]; then
-    install -Dm644 "$PROJECT_ROOT/configs/rofi/config.rasi" "$STAGING_DIR/rootfs/etc/skel/.config/rofi/config.rasi"
+if [ -d "$PROJECT_ROOT/configs/rofi" ]; then
+    cp -rf "$PROJECT_ROOT/configs/rofi/"* "$STAGING_DIR/rootfs/etc/skel/.config/rofi/"
 fi
 
 mkdir -p "$STAGING_DIR/rootfs/etc/skel/.config/dunst"
@@ -64,6 +64,23 @@ install -Dm644 "$PROJECT_ROOT/configs/dunst/dunstrc" "$STAGING_DIR/rootfs/etc/sk
 
 mkdir -p "$STAGING_DIR/rootfs/etc/skel/.config/kitty"
 install -Dm644 "$PROJECT_ROOT/configs/kitty/kitty.conf" "$STAGING_DIR/rootfs/etc/skel/.config/kitty/kitty.conf"
+
+if [ -f "$PROJECT_ROOT/configs/mime/mimeapps.list" ]; then
+    install -Dm644 "$PROJECT_ROOT/configs/mime/mimeapps.list" "$STAGING_DIR/rootfs/etc/skel/.config/mimeapps.list"
+fi
+
+# Fastfetch and Shell configurations
+mkdir -p "$STAGING_DIR/rootfs/etc/skel/.config/fastfetch"
+if [ -d "$PROJECT_ROOT/configs/fastfetch" ]; then
+    cp -rf "$PROJECT_ROOT/configs/fastfetch/"* "$STAGING_DIR/rootfs/etc/skel/.config/fastfetch/"
+fi
+
+if [ -f "$PROJECT_ROOT/configs/shell/.zshrc" ]; then
+    install -Dm644 "$PROJECT_ROOT/configs/shell/.zshrc" "$STAGING_DIR/rootfs/etc/skel/.zshrc"
+fi
+if [ -f "$PROJECT_ROOT/configs/shell/.bashrc" ]; then
+    install -Dm644 "$PROJECT_ROOT/configs/shell/.bashrc" "$STAGING_DIR/rootfs/etc/skel/.bashrc"
+fi
 
 # Populate active user directories
 for u in aether liveuser; do

@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# /usr/local/bin/aether-appearance
+# AetherOS Universal Appearance & Typography Engine
+# Usage:
+#   aether-appearance mode [dark|light]
+#   aether-appearance font "Font Name" [size]
+
+set -euo pipefail
+
+ACTION="${1:-mode}"
+VALUE="${2:-dark}"
+SIZE="${3:-11}"
+
+USER_HOME="${HOME:-/home/aether}"
+GTK3_DIR="$USER_HOME/.config/gtk-3.0"
+GTK4_DIR="$USER_HOME/.config/gtk-4.0"
+WAYBAR_DIR="$USER_HOME/.config/waybar"
+KITTY_DIR="$USER_HOME/.config/kitty"
+
+mkdir -p "$GTK3_DIR" "$GTK4_DIR" "$WAYBAR_DIR" "$KITTY_DIR"
+
+if [ "$ACTION" == "mode" ]; then
+    if [ "$VALUE" == "dark" ]; then
+        COLOR_SCHEME="prefer-dark"
+        GTK_THEME="Adwaita-dark"
+        KVANTUM_THEME="KvArcDark"
+        KITTY_THEME="Tokyo-Night"
+        WAYBAR_MODE="dark"
+        PREF_DARK="1"
+    else
+        COLOR_SCHEME="prefer-light"
+        GTK_THEME="Adwaita"
+        KVANTUM_THEME="KvArc"
+        KITTY_THEME="Tokyo-Night-Day"
+        WAYBAR_MODE="light"
+        PREF_DARK="0"
+    fi
+
+    # 1. FreeDesktop XDG Portal & GNOME/GTK4 Apps (Libadwaita, Flatpaks, Tauri)
+    if command -v gsettings &>/dev/null; then
+        gsettings set org.gnome.desktop.interface color-scheme "$COLOR_SCHEME" 2>/dev/null || true
+        gsettings set org.gnome.desktop.interface gtk-theme "$GTK_THEME" 2>/dev/null || true
+    fi
+
+    # 2. GTK 3 / Classic GTK Apps
+    cat <<EOF > "$GTK3_DIR/settings.ini"
+[Settings]
+gtk-theme-name=$GTK_THEME
+gtk-application-prefer-dark-theme=$PREF_DARK
+EOF
+
+    # 3. GTK 4 Configuration
+    cat <<EOF > "$GTK4_DIR/settings.ini"
+[Settings]
+gtk-theme-name=$GTK_THEME
+gtk-application-prefer-dark-theme=$PREF_DARK
+EOF
+
+    # 4. Qt 5 / Qt 6 (via Kvantum / qt5ct)
+    if command -v kvantummanager &>/dev/null; then
+        kvantummanager --set "$KVANTUM_THEME" 2>/dev/null || true
+    fi
+
+    # 5. Waybar Stylesheet Swap
+    if [ -f "$WAYBAR_DIR/style-$WAYBAR_MODE.css" ]; then
+        cp -f "$WAYBAR_DIR/style-$WAYBAR_MODE.css" "$WAYBAR_DIR/style.css"
+        killall -SIGUSR2 waybar 2>/dev/null || true
+    fi
+
+    # 6. Kitty Terminal
+    if [ -f "$KITTY_DIR/$KITTY_THEME.conf" ]; then
+        echo "include ./$KITTY_THEME.conf" > "$KITTY_DIR/theme.conf"
+        killall -SIGUSR1 kitty 2>/dev/null || true
+    fi
+
+    echo "Applied $VALUE mode universally."
+
+elif [ "$ACTION" == "font" ]; then
+    FONT_NAME="$VALUE"
+    FULL_FONT="$FONT_NAME $SIZE"
+
+    # 1. GNOME / GTK Interface & Monospace Fonts
+    if command -v gsettings &>/dev/null; then
+        gsettings set org.gnome.desktop.interface font-name "$FULL_FONT" 2>/dev/null || true
+        gsettings set org.gnome.desktop.interface document-font-name "$FULL_FONT" 2>/dev/null || true
+        gsettings set org.gnome.desktop.interface monospace-font-name "$FONT_NAME Mono $SIZE" 2>/dev/null || true
+    fi
+
+    # 2. Update GTK 3 & GTK 4 settings files
+    if [ -f "$GTK3_DIR/settings.ini" ]; then
+        sed -i "/gtk-font-name/d" "$GTK3_DIR/settings.ini" 2>/dev/null || true
+        echo "gtk-font-name=$FULL_FONT" >> "$GTK3_DIR/settings.ini"
+    fi
+
+    if [ -f "$GTK4_DIR/settings.ini" ]; then
+        sed -i "/gtk-font-name/d" "$GTK4_DIR/settings.ini" 2>/dev/null || true
+        echo "gtk-font-name=$FULL_FONT" >> "$GTK4_DIR/settings.ini"
+    fi
+
+    # 3. Waybar Font Update
+    if [ -f "$WAYBAR_DIR/style.css" ]; then
+        sed -i "s/font-family: [^;]*;/font-family: \"$FONT_NAME\", sans-serif;/g" "$WAYBAR_DIR/style.css" 2>/dev/null || true
+        killall -SIGUSR2 waybar 2>/dev/null || true
+    fi
+
+    # 4. Hyprland reload
+    hyprctl reload 2>/dev/null || true
+
+    echo "Applied font '$FULL_FONT' universally."
+fi

@@ -1,0 +1,107 @@
+/*******************************************************
+ * AETHER OS - Rofi Application Menu
+ * Aesthetic: Glassmorphism / Cyberpunk
+ *******************************************************/
+
+configuration {
+    modi: "drun,run";
+    show-icons: true;
+    icon-theme: "Papirus-Dark";
+    display-drun: "APPS";
+    display-run: "CMD";
+    drun-display-format: "{name}";
+    hover-select: true;
+    me-select-entry: "MouseSecondary";
+    me-accept-entry: "MousePrimary";
+    font: "JetBrainsMono Nerd Font 12";
+}
+
+* {
+    /* Color Palette */
+    bg-base:      rgba(15, 15, 20, 0.65);
+    bg-alt:       rgba(255, 255, 255, 0.05);
+    bg-hover:     rgba(244, 63, 94, 0.2);
+    border-color: rgba(244, 123, 81, 0.5);
+    text-color:   #f8f8f2;
+    text-muted:   #9399b2;
+    
+    background-color: transparent;
+}
+
+window {
+    transparency: "real";
+    location: center;
+    anchor: center;
+    width: 650px;
+    border-radius: 20px;
+    border: 1px;
+    border-color: @border-color;
+    background-color: @bg-base;
+    padding: 20px;
+}
+
+mainbox {
+    spacing: 15px;
+    children: [ inputbar, listview ];
+}
+
+inputbar {
+    spacing: 10px;
+    padding: 15px;
+    border-radius: 12px;
+    background-color: @bg-alt;
+    text-color: @text-color;
+    children: [ prompt, entry ];
+}
+
+prompt {
+    font: "JetBrainsMono Nerd Font Bold 12";
+    text-color: #f47b51;
+}
+
+entry {
+    placeholder: "Search applications...";
+    placeholder-color: @text-muted;
+    text-color: @text-color;
+    cursor: text;
+}
+
+listview {
+    lines: 6;
+    columns: 2;
+    spacing: 10px;
+    scrollbar: false;
+    layout: vertical;
+    fixed-height: true;
+    border: 0px;
+}
+
+element {
+    padding: 10px;
+    border-radius: 10px;
+    spacing: 12px;
+    cursor: pointer;
+}
+
+element normal.normal, element alternate.normal {
+    background-color: transparent;
+    text-color: @text-color;
+}
+
+element selected.normal {
+    background-color: @bg-hover;
+    border: 1px;
+    border-color: @border-color;
+    text-color: @text-color;
+}
+
+element-icon {
+    size: 32px;
+    cursor: inherit;
+}
+
+element-text {
+    vertical-align: 0.5;
+    cursor: inherit;
+    text-color: inherit;
+}

@@ -111,6 +111,10 @@ wl-clipboard
 playerctl
 swaybg
 hyprpaper
+hyprlock
+hypridle
+hyprpolkitagent
+xorg-x11-server-Xwayland
 dunst
 nautilus
 brightnessctl
@@ -123,6 +127,7 @@ pipewire
 pipewire-pulseaudio
 wireplumber
 pavucontrol
+cava
 qt5-qtwayland
 qt6-qtwayland
 qt5-qtquickcontrols2
@@ -231,13 +236,33 @@ clang
 docker-ce
 gh
 
-# --- Apps ---
+# --- Core Apps & Media ---
 firefox
+thunar
+thunar-archive-plugin
+thunar-volman
+tumbler
+file-roller
+gnome-text-editor
+loupe
+evince
+mpv
+swappy
+wf-recorder
 libreoffice
 vlc
 steam
 obs-studio
 gimp
+unzip
+zip
+p7zip
+p7zip-plugins
+papirus-icon-theme
+adwaita-icon-theme
+fira-code-fonts
+google-noto-sans-fonts
+google-noto-color-emoji-fonts
 
 %end
 
@@ -449,6 +474,12 @@ if [ -d /home/aether ]; then
   cp -r /etc/skel/.config/* /home/aether/.config/
   chown -R aether:aether /home/aether
   chmod +x /home/aether/.config/waybar/scripts/*.sh 2>/dev/null || true
+fi
+
+# Enable Flathub Flatpak repository
+if command -v flatpak >/dev/null 2>&1; then
+  flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+  flatpak update --appstream -y 2>/dev/null || true
 fi
 
 %end

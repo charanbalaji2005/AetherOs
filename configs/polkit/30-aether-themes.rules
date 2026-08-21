@@ -1,0 +1,10 @@
+/* AetherOS Theme Manager Polkit Policy */
+polkit.addRule(function(action, subject) {
+    if (
+        action.id == "org.freedesktop.policykit.exec" &&
+        action.lookup("program") == "/usr/local/bin/aether-theme-manager" &&
+        subject.isInGroup("wheel")
+    ) {
+        return polkit.Result.YES;
+    }
+});

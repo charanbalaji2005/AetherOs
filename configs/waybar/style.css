@@ -1,93 +1,214 @@
-/* AetherOS Floating Dock Styling (Reference Image 1) */
+/* AetherOS Waybar Glassmorphic Style with Cyberpunk Accents & Tooltip Hints */
 
 * {
-    font-family: "Outfit", "JetBrainsMono Nerd Font", "Segoe UI", sans-serif;
+    border: none;
+    border-radius: 0;
+    font-family: "Outfit", "JetBrainsMono Nerd Font", "Inter", sans-serif;
     font-size: 13px;
+    font-weight: 600;
     min-height: 0;
 }
 
 window#waybar {
-    background-color: transparent;
-    color: #e6f1f5;
+    background: rgba(10, 10, 15, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    color: #e2e2e2;
+    box-shadow: 0px 8px 32px rgba(0, 0, 0, 0.5);
 }
 
-/* Floating Dock Container */
-.modules-left,
-.modules-center,
-.modules-right {
-    background: rgba(18, 22, 34, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 22px;
-    padding: 2px 14px;
-    margin: 0px 4px;
-    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.4);
+/* -----------------------------------------------------
+   TOOLTIPS (Frosted Glass Hints)
+   ----------------------------------------------------- */
+tooltip {
+    background: rgba(15, 18, 28, 0.92);
+    border: 1px solid rgba(0, 240, 255, 0.4);
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.85);
+    padding: 14px;
 }
 
-/* Launcher Icon */
-#custom-launcher {
-    font-size: 16px;
-    color: #00f0ff;
-    padding-right: 6px;
+tooltip label {
+    color: #f8fafc;
+    font-size: 12px;
+    line-height: 1.6;
+    padding: 4px 6px;
 }
 
-/* Workspaces Dots */
+/* Workspaces Dots & Numbers */
 #workspaces button {
-    padding: 0 4px;
+    padding: 0 6px;
     background: transparent;
     color: rgba(255, 255, 255, 0.4);
-    border-radius: 12px;
-    transition: all 0.2s ease-in-out;
-}
-
-#workspaces button.active {
-    color: #00f0ff;
-    font-size: 14px;
-}
-
-#workspaces button:hover {
-    color: #ffffff;
-}
-
-/* Running App Icons in Dock */
-#taskbar button {
-    padding: 3px 8px;
     border-radius: 12px;
     transition: all 0.2s cubic-bezier(0.05, 0.9, 0.1, 1.05);
 }
 
-#taskbar button.active {
-    background: rgba(0, 240, 255, 0.2);
-    border-bottom: 2px solid #00f0ff;
+#workspaces button.active {
+    color: #00f0ff;
+    font-size: 15px;
 }
 
-#taskbar button:hover {
-    background: rgba(255, 255, 255, 0.12);
-}
-
-/* Status Icons */
-#pulseaudio,
-#network,
-#battery,
-#clock,
-#custom-power {
-    padding: 0 6px;
-    color: #94a3b8;
-    transition: color 0.2s ease;
-}
-
-#pulseaudio:hover,
-#network:hover,
-#battery:hover,
-#clock:hover {
+#workspaces button:hover {
     color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
 }
 
-#custom-power {
-    color: #ff5555;
+/* -----------------------------------------------------
+   QUICK LAUNCH DOCK
+   ----------------------------------------------------- */
+#custom-browser, 
+#custom-filemanager, 
+#custom-terminal, 
+#custom-settings {
+    font-size: 15px;
+    padding: 0 8px;
+    margin: 2px 2px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    color: #94a3b8;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover effects with brand-specific glowing colors */
+#custom-browser:hover {
+    color: #f47b51; /* Orange */
+    background: rgba(244, 123, 81, 0.2);
+    border-color: rgba(244, 123, 81, 0.5);
+    box-shadow: 0 0 12px rgba(244, 123, 81, 0.4);
+}
+
+#custom-filemanager:hover {
+    color: #38bdf8; /* Sky Blue */
+    background: rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.5);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+}
+
+#custom-terminal:hover {
+    color: #10b981; /* Emerald */
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.5);
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+
+#custom-settings:hover {
+    color: #a855f7; /* Purple */
+    background: rgba(168, 85, 247, 0.2);
+    border-color: rgba(168, 85, 247, 0.5);
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+}
+
+/* --- Active Window --- */
+#window {
+    color: #e2e8f0;
+    padding: 0 10px;
+    font-weight: 700;
+}
+
+/* --- Cava Audio Waves --- */
+#cava {
+    color: #f47b51; /* Aether Orange Accent */
+    font-family: "JetBrainsMono Nerd Font", monospace;
     font-size: 14px;
-    padding-left: 8px;
+    padding: 0 6px;
+    margin: 0 4px;
 }
 
-#custom-power:hover {
-    color: #ff7878;
+/* --- Media Player (MPRIS) --- */
+#mpris {
+    color: #c084fc; /* Soft Purple */
+    padding: 0 10px;
+    margin: 0 4px;
+    font-weight: 600;
+    border-radius: 12px;
+    background: rgba(168, 85, 247, 0.15);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    transition: all 0.2s ease-in-out;
+}
+
+#mpris.paused {
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Module Hover Effects & Pill Padding */
+#cpu,
+#memory,
+#clock,
+#tray,
+#network,
+#bluetooth,
+#pulseaudio,
+#battery,
+#custom-powermenu {
+    padding: 0 10px;
+    margin: 2px 2px;
+    border-radius: 12px;
+    transition: all 0.2s ease-in-out;
+}
+
+#cpu:hover,
+#memory:hover,
+#clock:hover,
+#network:hover,
+#bluetooth:hover,
+#pulseaudio:hover,
+#battery:hover {
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.2);
+}
+
+/* Specific Accent Modules */
+#cpu {
+    color: #38bdf8;
+}
+
+#memory {
+    color: #a855f7;
+}
+
+#clock {
+    color: #f1f5f9;
+    font-weight: 700;
+}
+
+#custom-powermenu {
+    color: #ff5555;
+    background: rgba(255, 85, 85, 0.15);
+    border: 1px solid rgba(255, 85, 85, 0.3);
+    padding: 0 12px;
+    margin-right: 4px;
+}
+
+#custom-powermenu:hover {
+    background: rgba(255, 85, 85, 0.3);
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(255, 85, 85, 0.5);
+}
+
+#battery.charging {
+    color: #10b981;
+}
+
+#battery.warning:not(.charging) {
+    color: #f59e0b;
+}
+
+#battery.critical:not(.charging) {
+    color: #ef4444;
+    animation-name: blink;
+    animation-duration: 0.6s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+@keyframes blink {
+    to {
+        background-color: #ef4444;
+        color: #ffffff;
+    }
 }
