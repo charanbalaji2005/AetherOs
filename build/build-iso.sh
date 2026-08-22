@@ -9,51 +9,65 @@ echo "    Aether OS Build Pipeline Started    "
 echo "========================================"
 
 # ---------------------------------------------------------
-# 1. Prerequisite Checks
+# 1. Prerequisite & Toolchain Path Resolution
 # ---------------------------------------------------------
+BUILD_USER=${SUDO_USER:-$USER}
+USER_HOME=$(getent passwd "$BUILD_USER" 2>/dev/null | cut -d: -f6 || echo "/home/$BUILD_USER")
+
+# Export standard toolchain paths (Cargo, NVM, Node) for sudo context
+export PATH="$USER_HOME/.cargo/bin:$USER_HOME/.nvm/versions/node/$(ls $USER_HOME/.nvm/versions/node 2>/dev/null | tail -n1)/bin:/usr/local/bin:/usr/bin:$PATH"
+
 if [ "$EUID" -ne 0 ]; then
   echo "Error: Building an ISO with livemedia-creator requires root privileges."
-  echo "Please run this script using sudo."
+  echo "Please run this script using sudo: sudo ./build/build-iso.sh"
   exit 1
 fi
 
-if ! command -v livemedia-creator &> /dev/null; then
-    echo "Error: livemedia-creator is not installed."
-    echo "Run: sudo dnf install lorax lorax-lmc-novirt anaconda-tui pykickstart"
-    exit 1
+SKIP_COMPILE=false
+if [[ "${1:-}" == "--skip-ui" ]] || [[ "${1:-}" == "--no-compile" ]]; then
+    SKIP_COMPILE=true
+    echo "--> Notice: Skipping Tauri UI compilation step (--skip-ui active)"
 fi
 
-if ! command -v npm &> /dev/null || ! command -v cargo &> /dev/null; then
-    echo "Error: Node.js (npm) and Rust (cargo) must be installed to compile the UI."
-    exit 1
+if [ "$SKIP_COMPILE" = false ]; then
+    if ! command -v npm &> /dev/null || ! command -v cargo &> /dev/null; then
+        echo "============================================================"
+        echo "Missing compilation toolchains (Node.js/npm or Rust/cargo)."
+        echo "To install them on Fedora:"
+        echo "  sudo dnf install -y nodejs npm rust cargo"
+        echo ""
+        echo "Or if you want to assemble the ISO with pre-staged binaries, run:"
+        echo "  sudo ./build/build-iso.sh --skip-ui"
+        echo "============================================================"
+        exit 1
+    fi
 fi
 
 # ---------------------------------------------------------
 # 2. Compile Tauri Applications
 # ---------------------------------------------------------
-echo "--> Compiling Tauri Applications..."
-
-# Array of all Aether OS React/Tauri applications
-APPS=("setup" "settings" "security-center" "software-center" "driver-manager" "snapshots" "powermenu")
-
-# We drop root privileges to compile the Rust apps as the standard user to avoid polluting root's cargo cache
-BUILD_USER=${SUDO_USER:-$USER}
-
-for app in "${APPS[@]}"; do
-    APP_DIR="aether/$app"
-    if [ -d "$APP_DIR" ]; then
-        echo "Building $app..."
-        cd "$APP_DIR"
-        
-        # Install dependencies and build via Tauri
-        sudo -u "$BUILD_USER" npm install || true
-        sudo -u "$BUILD_USER" npm run tauri build || true
-        
-        cd ../../
-    else
-        echo "Warning: Directory $APP_DIR not found, skipping..."
-    fi
-done
+if [ "$SKIP_COMPILE" = false ]; then
+    echo "--> Compiling Tauri Applications..."
+    APPS=("setup" "settings" "security-center" "software-center" "driver-manager" "snapshots" "powermenu")
+    
+    for app in "${APPS[@]}"; do
+        APP_DIR="aether/$app"
+        if [ -d "$APP_DIR" ]; then
+            echo "Building $app..."
+            cd "$APP_DIR"
+            
+            # Install dependencies and build via Tauri
+            sudo -u "$BUILD_USER" npm install || true
+            sudo -u "$BUILD_USER" npm run tauri build || true
+            
+            cd ../../
+        else
+            echo "Warning: Directory $APP_DIR not found, skipping..."
+        fi
+    done
+else
+    echo "--> Skipping UI compilation. Staging existing assets and overlay..."
+fi
 
 # ---------------------------------------------------------
 # 3. Stage Files in the ISO Overlay
