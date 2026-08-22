@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Aether Driver Manager
+Comment=Manage system, GPU, and proprietary hardware drivers
+Exec=aether-driver-manager
+Icon=yast-hardware-detection
+Terminal=false
+Categories=Settings;HardwareSettings;System;
+Keywords=driver;gpu;nvidia;hardware;vulkan;mesa;kernel;
+StartupNotify=true
