@@ -25,7 +25,7 @@ repo --name="updates" --metalink="https://mirrors.fedoraproject.org/metalink?rep
 repo --name="rpmfusion-free" --metalink="https://mirrors.rpmfusion.org/metalink?repo=free-fedora-40&arch=x86_64"
 repo --name="rpmfusion-nonfree" --metalink="https://mirrors.rpmfusion.org/metalink?repo=nonfree-fedora-40&arch=x86_64"
 
-%packages
+%packages --ignoremissing
 @core
 @hardware-support
 @standard
@@ -134,7 +134,6 @@ fedora-workstation-repositories
 # Security, VPN & Gaming Daemons
 firewalld
 wireguard-tools
-NetworkManager-wireguard
 NetworkManager-openvpn
 gamemode
 mangohud
