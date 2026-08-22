@@ -120,8 +120,10 @@ echo "--> Preparing livemedia-creator environment..."
 
 # SELinux must be in permissive mode to build the chroot environment successfully
 # (It will be re-enabled at the end of the script)
-echo "Setting SELinux to Permissive..."
-setenforce 0 || true
+if command -v setenforce &>/dev/null; then
+    echo "Setting SELinux to Permissive..."
+    setenforce 0 || true
+fi
 
 # livemedia-creator will fail if the working directory already exists. 
 # We must clear the /var/lmc directory from previous failed/successful builds.
@@ -138,7 +140,7 @@ echo "--> Initiating Anaconda build process (This may take 30-90 minutes dependi
 # Flattening the Kickstart resolves any external %include files into a single master file
 ksflatten -c build/aetheros.ks -o build/flat-aetheros.ks 2>/dev/null || cp build/aetheros.ks build/flat-aetheros.ks
 
-# Execute the Lorax build engine
+# Execute the Lorax build engine with valid CLI arguments
 livemedia-creator \
     --ks build/flat-aetheros.ks \
     --no-virt \
@@ -149,9 +151,8 @@ livemedia-creator \
     --iso-only \
     --iso-name "AetherOS-1.0-x86_64.iso" \
     --releasever 40 \
-    --title "Aether OS Live" \
     --macboot \
-    --squashfs-args="-comp zstd -b 1M -Xcompression-level 19"
+    --compression zstd
 
 # ---------------------------------------------------------
 # 6. Cleanup & Finalize
@@ -161,8 +162,10 @@ if [ -f /var/lmc/AetherOS-1.0-x86_64.iso ]; then
     mv /var/lmc/AetherOS-1.0-x86_64.iso build/output/
 fi
 
-echo "--> Restoring SELinux..."
-setenforce 1 || true
+if command -v setenforce &>/dev/null; then
+    echo "--> Restoring SELinux..."
+    setenforce 1 || true
+fi
 
 # Clean up the Lorax temporary directory
 rm -rf /var/lmc || true
