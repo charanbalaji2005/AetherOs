@@ -5,24 +5,25 @@ lang en_US.UTF-8
 keyboard us
 timezone UTC
 
-# Security and Network Defaults
+# Security, User and Network Defaults
 network --bootproto=dhcp --activate --onboot=on
+rootpw --plaintext aetheros
+user --name=liveuser --groups=wheel --plaintext --password=""
 selinux --enforcing
 firewall --enabled --service=mdns
 
 # Bootloader and partitioning for the Live image build environment
-# (This does not affect the final user installation via Calamares)
 bootloader --location=mbr
 zerombr
 clearpart --all
 part / --size=15360 --fstype=ext4
 
-# Repositories (Fedora base, updates & RPM Fusion)
-url --url="https://download.fedoraproject.org/pub/fedora/linux/releases/40/Everything/x86_64/os/"
-repo --name="fedora" --mirrorlist="https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-40&arch=x86_64"
-repo --name="updates" --mirrorlist="https://mirrors.fedoraproject.org/mirrorlist?repo=updates-released-f40&arch=x86_64"
-repo --name="rpmfusion-free" --mirrorlist="https://mirrors.rpmfusion.org/mirrorlist?repo=free-fedora-40&arch=x86_64"
-repo --name="rpmfusion-nonfree" --mirrorlist="https://mirrors.rpmfusion.org/mirrorlist?repo=nonfree-fedora-40&arch=x86_64"
+# Repositories (Fedora 40 base, updates & RPM Fusion via metalinks)
+url --metalink="https://mirrors.fedoraproject.org/metalink?repo=fedora-40&arch=x86_64"
+repo --name="fedora" --metalink="https://mirrors.fedoraproject.org/metalink?repo=fedora-40&arch=x86_64"
+repo --name="updates" --metalink="https://mirrors.fedoraproject.org/metalink?repo=updates-released-f40&arch=x86_64"
+repo --name="rpmfusion-free" --metalink="https://mirrors.rpmfusion.org/metalink?repo=free-fedora-40&arch=x86_64"
+repo --name="rpmfusion-nonfree" --metalink="https://mirrors.rpmfusion.org/metalink?repo=nonfree-fedora-40&arch=x86_64"
 
 %packages
 @core
