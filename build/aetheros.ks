@@ -35,7 +35,13 @@ repo --name=rpmfusion-nonfree --mirrorlist=https://mirrors.rpmfusion.org/mirrorl
 kernel
 kernel-modules
 kernel-modules-extra
+dracut-live
+dracut-squash
+dracut-config-generic
 grub2-efi
+grub2-efi-x64
+grub2-tools
+grub2-tools-extra
 efibootmgr
 shim
 
