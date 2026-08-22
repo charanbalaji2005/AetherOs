@@ -35,6 +35,13 @@
         "transparent": true,
         "decorations": true
       }
-    ]
+    ],
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/charanbalaji2005/AetherOs/releases/latest/download/update.json"
+      ],
+      "dialog": false
+    }
   }
 }

@@ -1,0 +1,11 @@
+# /etc/yum.repos.d/aether.repo
+# Official AetherOS Rolling Updates & Kernel Channel
+[aether-os]
+name=AetherOS Official Updates
+baseurl=https://charanbalaji2005.github.io/aether-rpm-repo/
+enabled=1
+gpgcheck=0
+type=rpm-md
+skip_if_unavailable=True
+metadata_expire=6h
+priority=10

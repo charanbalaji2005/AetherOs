@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "notes": "AetherOS Release v1.0.0 — Glassmorphic Wayland Desktop, Time-Travel Snapshots & Local-First Security.",
+  "pub_date": "2026-08-22T23:20:00Z",
+  "platforms": {
+    "linux-x86_64": {
+      "signature": "",
+      "url": "https://github.com/charanbalaji2005/AetherOs/releases/download/v1.0.0/aether-software-1.0.0-x86_64.AppImage.tar.gz"
+    }
+  }
+}

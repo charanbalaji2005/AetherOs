@@ -45,7 +45,11 @@
       "csp": null
     },
     "updater": {
-      "active": false
+      "active": true,
+      "endpoints": [
+        "https://github.com/charanbalaji2005/AetherOs/releases/latest/download/update.json"
+      ],
+      "dialog": false
     },
     "windows": [
       {

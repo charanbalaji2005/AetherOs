@@ -1,0 +1,50 @@
+name: Build and Deploy RPM Repository
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/**/*.rpm'
+      - 'packages/**/*.spec'
+  workflow_dispatch:
+
+jobs:
+  build-repo:
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install createrepo_c
+        run: sudo apt-get update && sudo apt-get install -y createrepo-c
+
+      - name: Generate RPM Repository Metadata
+        run: |
+          mkdir -p public/x86_64 public/noarch public/repodata
+          if [ -d packages ]; then
+            find packages/ -name "*.rpm" -exec cp {} public/x86_64/ \; 2>/dev/null || true
+          fi
+          createrepo_c ./public
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './public'
+
+  deploy:
+    needs: build-repo
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
