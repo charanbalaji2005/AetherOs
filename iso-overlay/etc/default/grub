@@ -1,0 +1,12 @@
+# /etc/default/grub - AetherOS GRUB2 Dual-Boot & Kernel Command Line Config
+GRUB_TIMEOUT=5
+GRUB_DISTRIBUTOR="Aether OS"
+GRUB_DEFAULT=saved
+GRUB_DISABLE_SUBMENU=true
+GRUB_TERMINAL_OUTPUT="console"
+GRUB_CMDLINE_LINUX="quiet splash loglevel=3 rd.udev.log_priority=3 vt.global_cursor_default=0 nvidia-drm.modeset=1"
+GRUB_DISABLE_RECOVERY="true"
+GRUB_ENABLE_BLSCFG=true
+
+# CRUCIAL FOR DUAL BOOT: Automatically detect Windows and other installed OSes
+GRUB_DISABLE_OS_PROBER=false

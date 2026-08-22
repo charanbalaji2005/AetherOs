@@ -88,8 +88,12 @@ gstreamer1-plugins-ugly
 vlc
 amberol
 
-# Virtualization & Hardware
+# Virtualization & Hardware Drivers
+open-vm-tools
 open-vm-tools-desktop
+xorg-x11-drv-vmware
+mesa-dri-drivers
+mesa-vulkan-drivers
 spice-vdagent
 qemu-guest-agent
 brightnessctl
@@ -107,8 +111,13 @@ papirus-icon-theme
 # Customization Tooling
 python3-pywal
 
-# System Installers & Btrfs Snapper
+# System Installers, Dual-Boot & Btrfs Snapper
 calamares
+efibootmgr
+os-prober
+grub2-efi-x64
+grub2-tools
+grub2-tools-extra
 flatpak
 snapper
 grub-btrfs
