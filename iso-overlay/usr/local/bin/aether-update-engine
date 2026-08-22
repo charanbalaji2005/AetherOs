@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# /usr/local/bin/aether-update-engine
+# AetherOS Background Update Engine & Notification Daemon
+set -euo pipefail
+
+# If the compiled Rust binary exists, execute it
+RUST_BIN="/usr/local/bin/aether-update-engine-bin"
+if [ -x "$RUST_BIN" ]; then
+    exec "$RUST_BIN" "$@"
+fi
+
+# Initial startup delay (let Waybar, SwayNC and Hyprland initialize)
+sleep 45
+
+while true; do
+    DNF_COUNT=0
+    FLATPAK_COUNT=0
+
+    # 1. Check DNF5 / DNF system updates
+    if command -v dnf5 &>/dev/null; then
+        DNF_OUTPUT=$(dnf5 check-update --quiet 2>/dev/null || true)
+        if [ -n "$DNF_OUTPUT" ]; then
+            DNF_COUNT=$(echo "$DNF_OUTPUT" | grep -v '^[[:space:]]*$' | wc -l || true)
+        fi
+    elif command -v dnf &>/dev/null; then
+        DNF_OUTPUT=$(dnf check-update --quiet 2>/dev/null || true)
+        if [ -n "$DNF_OUTPUT" ]; then
+            DNF_COUNT=$(echo "$DNF_OUTPUT" | grep -v '^[[:space:]]*$' | wc -l || true)
+        fi
+    fi
+
+    # 2. Check Flatpak containerized app updates
+    if command -v flatpak &>/dev/null; then
+        FLATPAK_OUTPUT=$(flatpak remote-updates --columns=application 2>/dev/null || true)
+        if [ -n "$FLATPAK_OUTPUT" ]; then
+            FLATPAK_COUNT=$(echo "$FLATPAK_OUTPUT" | grep -v '^[[:space:]]*$' | wc -l || true)
+        fi
+    fi
+
+    TOTAL=$(( DNF_COUNT + FLATPAK_COUNT ))
+
+    # 3. Trigger glassmorphic desktop notification if updates are available
+    if [ "$TOTAL" -gt 0 ] && command -v notify-send &>/dev/null; then
+        notify-send \
+            --app-name="Aether Software" \
+            --icon=software-update-available \
+            --urgency=normal \
+            "Software Updates Ready" \
+            "$DNF_COUNT System updates and $FLATPAK_COUNT App updates are available in the Aether Software Center." 2>/dev/null || true
+    fi
+
+    # Sleep for 6 hours (21600 seconds)
+    sleep 21600
+done
