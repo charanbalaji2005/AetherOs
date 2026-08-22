@@ -125,9 +125,12 @@ if command -v setenforce &>/dev/null; then
     setenforce 0 || true
 fi
 
-# livemedia-creator will fail if the working directory already exists. 
-# We must clear the /var/lmc directory from previous failed/successful builds.
-rm -rf /var/lmc || true
+# Clean up any stale Anaconda processes, PID locks, or leftover mounts from previous runs
+echo "Cleaning up stale locks and temporary build files..."
+rm -f /run/user/*/anaconda.pid /run/anaconda.pid /var/run/anaconda.pid /tmp/anaconda.pid 2>/dev/null || true
+pkill -9 -f anaconda 2>/dev/null || true
+umount -l /tmp/lmc-* /var/tmp/lmc-* /var/lmc/* /tmp/aether-staging 2>/dev/null || true
+rm -rf /var/lmc /tmp/lmc-* /var/tmp/lmc-* 2>/dev/null || true
 
 # Create the final output directory for the ISO
 mkdir -p build/output
