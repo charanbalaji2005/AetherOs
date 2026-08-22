@@ -1,12 +1,12 @@
 # aetheros.ks
 # Aether OS - Fedora 40/44 Custom Kickstart Master Manifest
 
-text
 lang en_US.UTF-8
 keyboard us
 timezone UTC
 
 # Security and Network Defaults
+network --bootproto=dhcp --activate --onboot=on
 selinux --enforcing
 firewall --enabled --service=mdns
 
