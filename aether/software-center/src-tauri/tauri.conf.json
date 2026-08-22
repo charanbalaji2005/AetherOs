@@ -41,7 +41,8 @@
       "endpoints": [
         "https://github.com/charanbalaji2005/AetherOs/releases/latest/download/update.json"
       ],
-      "dialog": false
+      "dialog": false,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ4NTIzNDIyQ0E1QkIzMTkKUldRWnMxdktJalJTMk5sYmxlVS95VVgraHlCWmpIczJpRTZJTmNoY0thNTYwb1NqNGxGdHMvc1YK"
     }
   }
 }
