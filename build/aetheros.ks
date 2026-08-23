@@ -86,6 +86,8 @@ kanshi
 dconf
 socat
 plymouth
+plymouth-core-libs
+plymouth-plugin-two-step
 plymouth-system-theme
 
 # Audio & Portals
@@ -221,12 +223,17 @@ grub2-mkconfig -o /boot/grub2/grub.cfg 2>/dev/null || true
 # 7. Add Flathub repository globally
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
 
-# 8. Pre-compile Nvidia Kernel Modules & Rebuild Dracut Initramfs
+# 8. Pre-compile Nvidia Kernel Modules, Setup Plymouth & Rebuild Dracut Initramfs
 /usr/sbin/kmodgenca -a 2>/dev/null || true
 systemctl enable akmods.service 2>/dev/null || true
+
+# Set Custom AetherOS Boot Screen & Prevent Plymouth/SDDM Race Condition
+sed -i 's/Conflicts=plymouth-quit.service/After=plymouth-quit.service/' /usr/lib/systemd/system/sddm.service 2>/dev/null || true
+plymouth-set-default-theme aetheros -R 2>/dev/null || true
+
 KERNEL_VER=$(rpm -q --qf "%{VERSION}-%{RELEASE}.%{ARCH}\n" kernel 2>/dev/null | head -n 1)
 if [ -n "$KERNEL_VER" ]; then
-    echo "Pre-compiling akmod drivers for kernel $KERNEL_VER..."
+    echo "Pre-compiling akmod drivers and initramfs for kernel $KERNEL_VER..."
     akmods --force --kernels "$KERNEL_VER" 2>/dev/null || true
     dracut --force --kver "$KERNEL_VER" 2>/dev/null || true
 fi
