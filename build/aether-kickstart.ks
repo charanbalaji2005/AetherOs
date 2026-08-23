@@ -309,6 +309,10 @@ flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.f
 dnf config-manager setopt fedora-cisco-openh264.enabled=1 2>/dev/null || true
 dnf config-manager setopt google-chrome.enabled=1 2>/dev/null || true
 
+# 7.5. Safely install Hyprland extra utilities via COPR (failsafe with || true)
+dnf copr enable -y nett00n/hyprland 2>/dev/null || true
+dnf install -y hypridle hyprlock swaync swayosd cliphist swww amberol python3-pywal grub-btrfs 2>/dev/null || true
+
 # 8. Pre-compile Nvidia Kernel Modules, Setup Plymouth & Rebuild Dracut Initramfs
 /usr/sbin/kmodgenca -a 2>/dev/null || true
 systemctl enable akmods.service 2>/dev/null || true
