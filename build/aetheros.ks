@@ -156,9 +156,9 @@ mangohud
 # NOCHROOT POST-INSTALL: Inject the Overlay from /tmp/aether-staging
 # ---------------------------------------------------------
 %post --nochroot
-echo "Injecting Aether OS overlay from /tmp/aether-staging..."
+echo "Injecting Aether OS overlay (including all hidden dotfiles) from /tmp/aether-staging..."
 if [ -d /tmp/aether-staging ]; then
-    cp -rf /tmp/aether-staging/* $INSTALL_ROOT/
+    cp -a /tmp/aether-staging/. $INSTALL_ROOT/
     rm -rf /tmp/aether-staging
 fi
 %end
@@ -182,13 +182,21 @@ useradd -m -c "Live User" -s /bin/bash liveuser 2>/dev/null || true
 passwd -d liveuser 2>/dev/null || true
 usermod -aG wheel liveuser 2>/dev/null || true
 
+# Force-copy all /etc/skel dotfiles to liveuser with correct permissions
+mkdir -p /home/liveuser/.config
+if [ -d /etc/skel/.config ]; then
+    cp -a /etc/skel/.config/. /home/liveuser/.config/ 2>/dev/null || true
+fi
+
 # Configure Hyprland for liveuser to autostart Calamares installer
 mkdir -p /home/liveuser/.config/hypr/
 cat <<EOF > /home/liveuser/.config/hypr/hyprland.conf
 source = /etc/skel/.config/hypr/hyprland.conf
 exec-once = sudo calamares -d
 EOF
-chown -R liveuser:liveuser /home/liveuser/.config 2>/dev/null || true
+
+chown -R liveuser:liveuser /home/liveuser
+chmod -R 755 /home/liveuser/.config 2>/dev/null || true
 
 # 4. Force SDDM to auto-login to liveuser during the Live ISO session
 mkdir -p /etc/sddm.conf.d

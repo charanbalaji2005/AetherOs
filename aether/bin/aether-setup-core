@@ -112,8 +112,9 @@ if [ "$ACTION" == "apply-setup" ]; then
     # 5. Populate user dotfiles from /etc/skel
     if [ -d "/home/$USERNAME" ] && [ -d /etc/skel/.config ]; then
         mkdir -p "/home/$USERNAME/.config"
-        cp -rf /etc/skel/.config/* "/home/$USERNAME/.config/" 2>/dev/null || true
+        cp -a /etc/skel/.config/. "/home/$USERNAME/.config/" 2>/dev/null || true
         chown -R "$USERNAME:$USERNAME" "/home/$USERNAME" 2>/dev/null || true
+        chmod -R 755 "/home/$USERNAME/.config" 2>/dev/null || true
     fi
 
     # 6. Mark first-boot as complete

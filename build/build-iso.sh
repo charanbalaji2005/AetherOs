@@ -100,10 +100,10 @@ if [ -d branding/wallpapers ]; then
 fi
 
 # Stage overlay to fixed absolute path /tmp/aether-staging for Kickstart nochroot
-echo "--> Staging overlay into /tmp/aether-staging..."
+echo "--> Staging overlay into /tmp/aether-staging (including all hidden dotfiles)..."
 rm -rf /tmp/aether-staging
 mkdir -p /tmp/aether-staging
-cp -rf ./iso-overlay/* /tmp/aether-staging/
+cp -a ./iso-overlay/. /tmp/aether-staging/
 
 # Explicitly stage Tauri binaries and core utility scripts
 mkdir -p /tmp/aether-staging/usr/local/bin
