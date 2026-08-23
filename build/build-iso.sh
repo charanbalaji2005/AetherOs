@@ -158,9 +158,22 @@ livemedia-creator \
     --compression zstd
 
 # ---------------------------------------------------------
-# 6. Cleanup & Finalize
+# 6. Convert Virtual Disks (VMDK & QCOW2) & Finalize
 # ---------------------------------------------------------
-echo "--> Build complete. Moving ISO to build/output/..."
+echo "--> Moving and converting build artifacts..."
+mkdir -p build/output
+
+# 1. Convert root disk to VMware VMDK and QEMU QCOW2
+if ls /var/lmc/lmc-disk-*.img 1>/dev/null 2>&1; then
+    echo "--> Converting to VMware VMDK & QEMU QCOW2..."
+    RAW_DISK=$(ls -t /var/lmc/lmc-disk-*.img | head -n 1)
+    if command -v qemu-img &>/dev/null; then
+        qemu-img convert -f raw -O vmdk -o subformat=monolithicSparse,compat6 "$RAW_DISK" build/output/AetherOS-1.0-x86_64.vmdk 2>/dev/null || true
+        qemu-img convert -f raw -O qcow2 -c "$RAW_DISK" build/output/AetherOS-1.0-x86_64.qcow2 2>/dev/null || true
+    fi
+fi
+
+# 2. Move ISO
 if [ -f /var/lmc/AetherOS-1.0-x86_64.iso ]; then
     mv /var/lmc/AetherOS-1.0-x86_64.iso build/output/
 fi
