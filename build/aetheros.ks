@@ -56,14 +56,11 @@ xorg-x11-drv-nvidia-cuda
 
 # Core Desktop Environment & Display Manager
 hyprland
-hyprlock
-hypridle
 gdm
 kitty
 waybar
-swww
 
-# GNOME Desktop Environment (Dual Session Support)
+# GNOME Desktop Environment (Default Workstation GUI)
 gnome-shell
 gnome-session
 gnome-terminal
@@ -73,11 +70,10 @@ gnome-tweaks
 gnome-extensions-app
 gnome-shell-extension-dash-to-dock
 gnome-shell-extension-appindicator
-gnome-shell-extension-blur-my-shell
 gnome-shell-extension-user-theme
 zenity
 
-# Qt & SDDM Glassmorphic Theme Dependencies
+# Qt & GUI Theme Dependencies
 qt5-qtgraphicaleffects
 qt5-qtquickcontrols2
 qt5-qtdeclarative
@@ -87,15 +83,12 @@ qt6-qtdeclarative
 qt6-qtsvg
 qt6-qtquickcontrols2
 
-# Aether OS Background Daemons
-swaync
+# Aether OS System Daemons & Utilities
 polkit-kde
 udiskie
 network-manager-applet
 blueman
 wl-clipboard
-cliphist
-swayosd
 kanshi
 dconf
 socat
@@ -121,7 +114,6 @@ gstreamer1-plugins-bad-free
 gstreamer1-plugins-bad-freeworld
 gstreamer1-plugins-ugly
 vlc
-amberol
 
 # Virtualization & Hardware Drivers
 open-vm-tools
@@ -143,11 +135,15 @@ google-noto-sans-fonts
 google-noto-color-emoji-fonts
 papirus-icon-theme
 
-# Customization Tooling & Version Control
-python3-pywal
+# Customization Tooling, Compression & Version Control
 git
 unzip
 rsync
+tar
+curl
+wget
+snapper
+btrfs-progs
 
 # System Installers, Dual-Boot & Btrfs Snapper
 calamares
@@ -297,7 +293,7 @@ enable-animations=true
 button-layout='appmenu:minimize,maximize,close'
 
 [org/gnome/shell]
-enabled-extensions=['dash-to-dock@micxgx.gmail.com', 'blur-my-shell@aunetx', 'appindicatorsupport@rgcjonas.gmail.com']
+enabled-extensions=['dash-to-dock@micxgx.gmail.com', 'appindicatorsupport@rgcjonas.gmail.com', 'user-theme@gnome-shell-extensions.gcampax.github.com']
 favorite-apps=['firefox.desktop', 'aether-software.desktop', 'aether-files.desktop', 'aether-settings.desktop', 'org.gnome.Terminal.desktop', 'kitty.desktop']
 EOF
 dconf update 2>/dev/null || true
