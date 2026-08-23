@@ -275,10 +275,10 @@ favorite-apps=['firefox.desktop', 'aether-software.desktop', 'aether-files.deskt
 EOF
 dconf update 2>/dev/null || true
 
-# 6. Configure Silent Flicker-Free Boot with GRUB & Nvidia KMS
-sed -i 's/GRUB_CMDLINE_LINUX="/GRUB_CMDLINE_LINUX="quiet splash loglevel=3 rd.udev.log_priority=3 vt.global_cursor_default=0 nvidia-drm.modeset=1 /g' /etc/default/grub 2>/dev/null || true
-echo "GRUB_TIMEOUT=0" >> /etc/default/grub
-echo "GRUB_HIDDEN_TIMEOUT=1" >> /etc/default/grub
+# 6. Configure 5-Second GRUB Boot Menu & Kernel Command Line
+sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=5/' /etc/default/grub 2>/dev/null || true
+echo "GRUB_TIMEOUT_STYLE=menu" >> /etc/default/grub
+echo "GRUB_DISABLE_OS_PROBER=false" >> /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg 2>/dev/null || true
 
 # 7. Add Flathub repository globally
