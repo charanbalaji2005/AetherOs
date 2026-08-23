@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# /usr/local/bin/aether-firstboot
+# AetherOS First-Boot Execution Guard
+
+# If the completion flag exists, exit immediately
+if [ -f /var/lib/aether-setup-complete ]; then
+    exit 0
+fi
+
+# Launch the Welcome/Setup application in full screen overlay mode
+if command -v aether-welcome &>/dev/null; then
+    exec /usr/local/bin/aether-welcome
+elif [ -f /usr/local/bin/aether-setup ]; then
+    exec /usr/local/bin/aether-setup
+fi

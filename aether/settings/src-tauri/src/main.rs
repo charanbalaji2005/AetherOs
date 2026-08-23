@@ -139,7 +139,12 @@ fn apply_wallpaper_and_theme(image_path: String, theme_profile: String) -> Resul
         let _ = fs::write(aether_cfg.join("current_wallpaper"), &image_path);
     }
 
-    // 5. Sync SDDM login screen via Polkit
+    // 4.5. Trigger dual-desktop wallpaper switcher (GNOME gsettings & Hyprland)
+    let _ = Command::new("aether-wallpaper")
+        .arg(&image_path)
+        .output();
+
+    // 5. Sync Login Screen (GDM / SDDM)
     let _ = Command::new("pkexec")
         .args(["/usr/local/bin/aether-sync-sddm", &image_path])
         .output();

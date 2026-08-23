@@ -9,3 +9,4 @@ Terminal=false
 Categories=Settings;Security;System;
 Keywords=firewall;security;network;firewalld;rules;
 StartupNotify=true
+NoDisplay=true

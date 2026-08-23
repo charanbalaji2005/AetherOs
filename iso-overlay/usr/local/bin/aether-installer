@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# AetherOS System Installer Launcher (Calamares)
+set -euo pipefail
+
+if [ -f /usr/bin/calamares ]; then
+    sudo -E calamares -d "$@"
+else
+    # Fallback message
+    notify-send -a "AetherOS" -u critical "Installer Unavailable" "Calamares installer binary was not found on this system."
+fi

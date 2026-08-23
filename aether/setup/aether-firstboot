@@ -302,18 +302,10 @@ def configure_sddm_autologin(username):
     os.makedirs(sddm_conf_dir, exist_ok=True)
     sddm_conf_path = os.path.join(sddm_conf_dir, "aetheros.conf")
     with open(sddm_conf_path, "w") as f:
-        f.write(f"""# AetherOS SDDM Permanent Autologin Configuration
-[General]
-DisplayServer=wayland
-
-[Theme]
-Current=aetheros-glass
-ThemeDir=/usr/share/sddm/themes
-
-[Autologin]
-User={username}
-Session=hyprland
-Relogin=false
+        f.write(f"""# AetherOS GDM / Session Configuration
+[daemon]
+WaylandEnable=true
+DefaultSession=gnome.desktop
 """)
 
 def apply_user_account(username, password="", password_hash=""):

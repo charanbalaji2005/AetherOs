@@ -249,10 +249,8 @@ chmod -R 755 /home/liveuser/.config 2>/dev/null || true
 # 4. Set GNOME as Default Graphical Interface & GDM Session
 systemctl set-default graphical.target
 
-# Configure GDM Live Auto-login dynamically ONLY for the live user
-if id "liveuser" &>/dev/null; then
-    mkdir -p /var/lib/AccountsService/users
-    cat <<EOF > /var/lib/AccountsService/users/liveuser
+mkdir -p /var/lib/AccountsService/users
+cat <<EOF > /var/lib/AccountsService/users/liveuser
 [User]
 Session=gnome
 XSession=gnome
@@ -260,8 +258,8 @@ Icon=/usr/share/backgrounds/aetheros/avatar.png
 SystemAccount=false
 EOF
 
-    mkdir -p /etc/gdm
-    cat <<EOF > /etc/gdm/custom.conf
+mkdir -p /etc/gdm
+cat <<EOF > /etc/gdm/custom.conf
 [daemon]
 WaylandEnable=true
 AutomaticLoginEnable=True
@@ -273,7 +271,6 @@ DefaultSession=gnome.desktop
 [chooser]
 [debug]
 EOF
-fi
 
 # Autostart Calamares Installer on Live boot
 mkdir -p /etc/xdg/autostart

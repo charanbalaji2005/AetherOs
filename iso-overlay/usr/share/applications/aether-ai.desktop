@@ -9,3 +9,4 @@ Terminal=false
 Categories=Utility;System;
 Keywords=ai;assistant;spotlight;gemini;search;
 StartupNotify=true
+NoDisplay=true

@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # /usr/local/bin/aether-sync-monitors
-# Triggered automatically by kanshi when a display is connected or disconnected
 set -euo pipefail
+
+# Under GNOME, Mutter natively manages display outputs and scaling
+if [ "${XDG_CURRENT_DESKTOP:-}" = "GNOME" ] || [ "${XDG_CURRENT_DESKTOP:-}" = "ubuntu:GNOME" ]; then
+    exit 0
+fi
 
 # 1. Give Hyprland 1 second to fully register the new resolution and geometry
 sleep 1

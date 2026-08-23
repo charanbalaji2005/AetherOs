@@ -1,36 +1,30 @@
 #!/usr/bin/env bash
-# /etc/calamares/scripts/setup-oobe.sh
-# Runs inside the target SSD/NVMe rootfs during Calamares installation
-
+# Target Disk Post-Install Script (Calamares)
+# Ensures GDM and GNOME are default on the permanently installed system
 set -euo pipefail
 
-echo "Configuring Aether OS First-Boot OOBE on target disk..."
+# 1. Clean up live ISO autologin configurations
+rm -f /etc/sddm.conf.d/autologin.conf 2>/dev/null || true
 
-# 1. Create the First-Boot OOBE User
-useradd -m -c "Aether Setup" -s /bin/bash aether-setup 2>/dev/null || true
-passwd -d aether-setup 2>/dev/null || true
-usermod -aG wheel aether-setup 2>/dev/null || true
+# 2. Configure GDM with GNOME as default session on target disk
+mkdir -p /etc/gdm
+cat <<EOF > /etc/gdm/custom.conf
+[daemon]
+WaylandEnable=true
+DefaultSession=gnome.desktop
 
-# 2. Configure Hyprland for the Welcome Wizard (Kiosk Mode)
-mkdir -p /home/aether-setup/.config/hypr/
-cat <<EOF > /home/aether-setup/.config/hypr/hyprland.conf
-env = WLR_NO_HARDWARE_CURSORS,1
-monitor=,preferred,auto,1
-windowrulev2 = fullscreen, class:^(aether-welcome)$
-animations { enabled = no }
-exec-once = /usr/local/bin/aether-welcome
+[security]
+[xdmcp]
+[chooser]
+[debug]
 EOF
-chown -R aether-setup:aether-setup /home/aether-setup/.config 2>/dev/null || true
 
-# 3. Set SDDM to auto-login to the setup wizard on the target disk
-mkdir -p /etc/sddm.conf.d
-cat <<EOF > /etc/sddm.conf.d/autologin.conf
-[Autologin]
-User=aether-setup
-Session=hyprland
-EOF
+# 3. Ensure graphical target is default
+systemctl set-default graphical.target 2>/dev/null || true
+systemctl enable gdm.service 2>/dev/null || true
+systemctl disable sddm.service 2>/dev/null || true
 
 # 4. Remove the liveuser from the installed system
-userdel -r liveuser 2>/dev/null || true
+userdel -rf liveuser 2>/dev/null || true
 
-echo "Target disk OOBE successfully prepared."
+echo "Target disk GNOME environment successfully configured."

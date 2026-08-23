@@ -9,3 +9,4 @@ Terminal=false
 Categories=System;Utility;Archiving;
 Keywords=backup;snapshot;restore;btrfs;recovery;
 StartupNotify=true
+NoDisplay=true

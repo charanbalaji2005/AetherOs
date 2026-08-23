@@ -9,3 +9,4 @@ Terminal=false
 Categories=Utility;Game;
 Keywords=game;gamemode;performance;fps;boost;gpu;
 StartupNotify=true
+NoDisplay=true

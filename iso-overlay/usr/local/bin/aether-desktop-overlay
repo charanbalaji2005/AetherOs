@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# AetherOS Cyberpunk Hyprland Desktop Environment Overlay Launcher
+# Install: sudo install -m 755 aether-desktop-overlay /usr/local/bin/aether-desktop-overlay
+
+set -euo pipefail
+
+WIDGETS_DIR="/usr/share/aetheros/desktop/widgets"
+if [[ ! -d "$WIDGETS_DIR" ]]; then
+    # Fallback to local source if running in dev environment
+    WIDGETS_DIR="$(cd "$(dirname "$0")/../../desktop/widgets" 2>/dev/null && pwd || echo "/usr/share/aetheros/desktop/widgets")"
+fi
+
+if [[ -f "$WIDGETS_DIR/aether_desktop.py" ]]; then
+    python3 "$WIDGETS_DIR/aether_desktop.py" "$@"
+else
+    echo "Error: AetherOS desktop widgets not found in $WIDGETS_DIR"
+    exit 1
+fi
