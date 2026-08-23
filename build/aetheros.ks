@@ -53,7 +53,7 @@ openssl
 akmod-nvidia
 xorg-x11-drv-nvidia-cuda
 
-# Core Desktop Environment
+# Core Desktop Environment & SDDM
 hyprland
 hyprlock
 hypridle
@@ -62,6 +62,16 @@ sddm-wayland-generic
 kitty
 waybar
 swww
+
+# Qt & SDDM Glassmorphic Theme Dependencies
+qt5-qtgraphicaleffects
+qt5-qtquickcontrols2
+qt5-qtdeclarative
+qt5-qtsvg
+qt6-qt5compat
+qt6-qtdeclarative
+qt6-qtsvg
+qt6-qtquickcontrols2
 
 # Aether OS Background Daemons
 swaync
