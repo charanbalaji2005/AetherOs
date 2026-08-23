@@ -62,6 +62,14 @@ kitty
 waybar
 swww
 
+# GNOME Desktop Environment (Dual Session Support)
+gnome-shell
+gnome-session
+gnome-terminal
+nautilus
+gnome-control-center
+gnome-tweaks
+
 # Qt & SDDM Glassmorphic Theme Dependencies
 qt5-qtgraphicaleffects
 qt5-qtquickcontrols2
