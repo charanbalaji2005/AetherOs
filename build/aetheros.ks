@@ -115,6 +115,9 @@ xdg-desktop-portal-gtk
 
 # Multimedia Codecs & Players
 ffmpeg
+gstreamer1-plugins-base
+gstreamer1-plugins-good
+gstreamer1-plugins-bad-free
 gstreamer1-plugins-bad-freeworld
 gstreamer1-plugins-ugly
 vlc
@@ -281,8 +284,10 @@ echo "GRUB_TIMEOUT_STYLE=menu" >> /etc/default/grub
 echo "GRUB_DISABLE_OS_PROBER=false" >> /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg 2>/dev/null || true
 
-# 7. Add Flathub repository globally
-flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+# 7. Add Flathub & Third-Party Repositories Globally
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+dnf config-manager setopt fedora-cisco-openh264.enabled=1 2>/dev/null || true
+dnf config-manager setopt google-chrome.enabled=1 2>/dev/null || true
 
 # 8. Pre-compile Nvidia Kernel Modules, Setup Plymouth & Rebuild Dracut Initramfs
 /usr/sbin/kmodgenca -a 2>/dev/null || true

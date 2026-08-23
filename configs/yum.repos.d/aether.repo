@@ -8,4 +8,6 @@ gpgcheck=0
 type=rpm-md
 skip_if_unavailable=True
 metadata_expire=6h
-priority=10
+# Priority 1 ensures AetherOS packages take precedence over Fedora (99) and RPM Fusion (50)
+priority=1
+cost=500
