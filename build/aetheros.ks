@@ -30,6 +30,7 @@ repo --name="rpmfusion-nonfree" --metalink="https://mirrors.rpmfusion.org/metali
 @hardware-support
 @standard
 @fonts
+@workstation-product-environment
 
 # Kernel and Boot Tools
 kernel
