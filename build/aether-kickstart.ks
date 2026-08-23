@@ -46,10 +46,16 @@ dracut-squash
 dracut-config-generic
 grub2-efi
 grub2-efi-x64
+grub2-efi-x64-cdboot
+grub2-pc
+grub2-pc-modules
 grub2-tools
 grub2-tools-extra
 efibootmgr
 shim
+shim-x64
+syslinux
+isolinux
 
 # GPU Drivers & Secure Boot Signing
 akmods
