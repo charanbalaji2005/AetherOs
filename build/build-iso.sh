@@ -182,10 +182,32 @@ if [ -f build/output/AetherOS-1.0-x86_64.iso ]; then
     rm -f AetherOS-1.0-x86_64.iso.part-*
     split -b 1900M AetherOS-1.0-x86_64.iso "AetherOS-1.0-x86_64.iso.part-"
     cd ../../
-    echo "Chunking complete. Both single ISO (for SourceForge) and .part-* chunks (for GitHub) are ready."
+# ---------------------------------------------------------
+# 8. Generate SHA256 Checksums for Release Artifacts
+# ---------------------------------------------------------
+echo "--> Generating SHA256 checksums for release artifacts..."
+if [ -d build/output ]; then
+    cd build/output
+    CHECKSUM_FILE="AetherOS-sha256sums.txt"
+    > "$CHECKSUM_FILE"
+    for ext in iso vmdk qcow2 img part-*; do
+        for f in *.$ext; do
+            if [ -f "$f" ]; then
+                sha256sum "$f" >> "$CHECKSUM_FILE"
+            fi
+        done
+    done
+    if [ -f AetherOS-1.0-x86_64.iso ]; then
+        sha256sum AetherOS-1.0-x86_64.iso > AetherOS-1.0-x86_64.iso.sha256
+    fi
+    echo "------------------------------------------"
+    echo "Checksums generated in build/output/$CHECKSUM_FILE:"
+    cat "$CHECKSUM_FILE"
+    echo "------------------------------------------"
+    cd ../../
 fi
 
 echo "========================================"
-echo "  ISO successfully generated at:        "
-echo "  build/output/AetherOS-1.0-x86_64.iso  "
+echo "  Build & Packaging Complete!           "
+echo "  Directory: build/output/              "
 echo "========================================"
