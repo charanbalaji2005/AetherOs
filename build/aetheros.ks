@@ -246,13 +246,32 @@ EOF
 chown -R liveuser:liveuser /home/liveuser
 chmod -R 755 /home/liveuser/.config 2>/dev/null || true
 
-# 4. Force SDDM to auto-login to liveuser during the Live ISO session
-mkdir -p /etc/sddm.conf.d
-cat <<EOF > /etc/sddm.conf.d/autologin.conf
-[Autologin]
-User=liveuser
-Session=hyprland
+# 4. Set GNOME as Default Graphical Interface & GDM Session
+systemctl set-default graphical.target
+
+mkdir -p /var/lib/AccountsService/users
+cat <<EOF > /var/lib/AccountsService/users/liveuser
+[User]
+Session=gnome
+XSession=gnome
+Icon=/usr/share/backgrounds/aetheros/avatar.png
+SystemAccount=false
 EOF
+
+mkdir -p /etc/gdm
+cat <<EOF > /etc/gdm/custom.conf
+[daemon]
+WaylandEnable=true
+AutomaticLoginEnable=True
+AutomaticLogin=liveuser
+DefaultSession=gnome.desktop
+EOF
+
+# Autostart Calamares Installer on Live boot
+mkdir -p /etc/xdg/autostart
+if [ -f /usr/share/applications/calamares.desktop ]; then
+    cp -f /usr/share/applications/calamares.desktop /etc/xdg/autostart/ 2>/dev/null || true
+fi
 
 # 5. GTK/Qt Theme Unification (System-wide default)
 mkdir -p /etc/dconf/profile
