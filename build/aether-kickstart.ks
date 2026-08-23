@@ -152,19 +152,17 @@ os-prober
 grub2-efi-x64
 grub2-tools
 grub2-tools-extra
-flatpak
-snapper
-grub-btrfs
-libdnf5-plugin-actions
-fedora-third-party
-fedora-workstation-repositories
-
 # Security, VPN & Gaming Daemons
 firewalld
 wireguard-tools
 NetworkManager-openvpn
 gamemode
 mangohud
+
+# Exclude SDDM in favor of GDM
+-sddm
+-sddm-wayland-generic
+-sddm-themes
 %end
 
 
