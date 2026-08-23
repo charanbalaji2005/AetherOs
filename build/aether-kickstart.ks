@@ -9,7 +9,7 @@ timezone UTC
 network --bootproto=dhcp --activate --onboot=on
 rootpw --plaintext aetheros
 user --name=liveuser --groups=wheel --plaintext --password=""
-selinux --enforcing
+selinux --permissive
 firewall --enabled --service=mdns
 
 # Bootloader and partitioning for the Live image build environment
@@ -31,6 +31,11 @@ repo --name="rpmfusion-nonfree" --metalink="https://mirrors.rpmfusion.org/metali
 @standard
 @fonts
 @workstation-product-environment
+
+# SELinux Utilities & Policy Core
+policycoreutils
+policycoreutils-python-utils
+libselinux-utils
 
 # Kernel and Boot Tools
 kernel
@@ -191,35 +196,7 @@ chmod +x /usr/local/bin/aether-* 2>/dev/null || true
 chown root:root /etc/polkit-1/rules.d/*.rules 2>/dev/null || true
 chmod 644 /etc/polkit-1/rules.d/*.rules 2>/dev/null || true
 
-# 3. Dynamic Dotfiles Sync from GitHub Repository
-mkdir -p /tmp/os-dotfiles
-if git clone --depth 1 https://github.com/charanbalaji2005/AetherOs.git /tmp/os-dotfiles 2>/dev/null; then
-    echo "--> Successfully pulled latest dotfiles from GitHub!"
-    mkdir -p /etc/skel/.config
-    if [ -d /tmp/os-dotfiles/configs/hyprland ]; then
-        mkdir -p /etc/skel/.config/hypr
-        cp -f /tmp/os-dotfiles/configs/hyprland/* /etc/skel/.config/hypr/ 2>/dev/null || true
-    fi
-    if [ -d /tmp/os-dotfiles/configs/waybar ]; then
-        mkdir -p /etc/skel/.config/waybar
-        cp -rf /tmp/os-dotfiles/configs/waybar/* /etc/skel/.config/waybar/ 2>/dev/null || true
-    fi
-    if [ -d /tmp/os-dotfiles/configs/kitty ]; then
-        mkdir -p /etc/skel/.config/kitty
-        cp -rf /tmp/os-dotfiles/configs/kitty/* /etc/skel/.config/kitty/ 2>/dev/null || true
-    fi
-    if [ -d /tmp/os-dotfiles/configs/wofi ]; then
-        mkdir -p /etc/skel/.config/wofi
-        cp -rf /tmp/os-dotfiles/configs/wofi/* /etc/skel/.config/wofi/ 2>/dev/null || true
-    fi
-    if [ -d /tmp/os-dotfiles/configs/dunst ]; then
-        mkdir -p /etc/skel/.config/dunst
-        cp -rf /tmp/os-dotfiles/configs/dunst/* /etc/skel/.config/dunst/ 2>/dev/null || true
-    fi
-    rm -rf /tmp/os-dotfiles
-fi
-
-# Setup the Live ISO User (Autostarts Calamares Installer on Boot)
+# 3. Setup the Live ISO User (Autostarts Calamares Installer on Boot)
 useradd -m -c "Live User" -s /bin/bash liveuser 2>/dev/null || true
 passwd -d liveuser 2>/dev/null || true
 usermod -aG wheel liveuser 2>/dev/null || true
