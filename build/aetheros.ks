@@ -53,12 +53,11 @@ openssl
 akmod-nvidia
 xorg-x11-drv-nvidia-cuda
 
-# Core Desktop Environment & SDDM
+# Core Desktop Environment & Display Manager
 hyprland
 hyprlock
 hypridle
-sddm
-sddm-wayland-generic
+gdm
 kitty
 waybar
 swww
@@ -250,7 +249,8 @@ fi
 systemctl enable cpupower.service 2>/dev/null || true
 mkdir -p /etc/sysconfig
 echo 'CPUPOWER_START_OPTS="frequency-set -g performance"' > /etc/sysconfig/cpupower 2>/dev/null || true
-systemctl enable sddm.service 2>/dev/null || true
+systemctl disable sddm.service 2>/dev/null || true
+systemctl enable gdm.service 2>/dev/null || true
 systemctl enable NetworkManager.service 2>/dev/null || true
 systemctl enable bluetooth.service 2>/dev/null || true
 systemctl enable fstrim.timer 2>/dev/null || true
