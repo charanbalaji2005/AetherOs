@@ -270,6 +270,7 @@ enable-animations=true
 button-layout='appmenu:minimize,maximize,close'
 
 [org/gnome/shell]
+enabled-extensions=['dash-to-dock@micxgx.gmail.com', 'blur-my-shell@aunetx', 'appindicatorsupport@rgcjonas.gmail.com']
 favorite-apps=['firefox.desktop', 'aether-software.desktop', 'aether-files.desktop', 'aether-settings.desktop', 'org.gnome.Terminal.desktop', 'kitty.desktop']
 EOF
 dconf update 2>/dev/null || true
