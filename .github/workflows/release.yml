@@ -1,0 +1,72 @@
+name: Build and Release Aether OS
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release Version (e.g., v1.0.0)"
+        required: true
+        default: "v1.0.0"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build Multi-Format Images & Publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Build & Virtualization Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qemu-utils \
+            xorriso \
+            isolinux \
+            coreutils \
+            curl \
+            wget
+
+      - name: Execute ISO & Image Build Pipeline
+        run: |
+          chmod +x ./build/build-iso.sh
+          sudo ./build/build-iso.sh --skip-ui || true
+          mkdir -p dist
+          cp -f build/output/* dist/ 2>/dev/null || true
+
+      - name: Determine Release Tag
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.tag }}
+          name: "Aether OS ${{ steps.vars.outputs.tag }}"
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            dist/*.iso
+            dist/*.vmdk
+            dist/*.qcow2
+            dist/*.img
+            dist/*.sha256
+            dist/SHA256SUMS.txt
+            dist/AetherOS-sha256sums.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
