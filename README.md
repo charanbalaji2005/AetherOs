@@ -1,56 +1,56 @@
 # AetherOS
 
-A Fedora-based, Hyprland-first Linux distribution.
+<p align="center">
+  <img src="branding/logos/aetheros-logo.png" alt="AetherOS" width="180">
+</p>
 
-## How this actually works
+<p align="center">
+  <strong>A Fedora-based, Hyprland-first Linux distribution for modern desktop users, developers, creators and power users.</strong>
+</p>
 
-AetherOS is **not** a from-scratch kernel or OS — no realistic project is.
-Fedora, Ultramarine, Nobara, and every other indie distro are built the same
-way: take Fedora's own packages and installer tooling, and define a custom
-selection + branding via a **kickstart file**. That's `build/aetheros.ks`.
-Using real Fedora RPMs means you get real, working NVIDIA/AMD/Intel drivers,
-a real kernel, and a real Hyprland session — not placeholder code.
+<p align="center">
+  Fedora • Linux • Wayland • Hyprland • GNOME • systemd • PipeWire • Tauri
+</p>
 
-## Requirements to build
+---
 
-- A **Fedora Linux machine** (bare metal or VM) — this cannot be built inside
-  a sandboxed chat environment, since it needs loop devices, root, and several
-  GB of disk.
-- `sudo dnf install lorax livemedia-creator`
-- ~15 GB free disk space, ~20–40 minutes build time
+## Overview
 
-## Build
+**AetherOS** is a Fedora-based Linux distribution designed to provide a modern, customizable and developer-friendly desktop experience while retaining the reliability and hardware compatibility of the Fedora ecosystem.
 
-```bash
-sudo bash build/build-iso.sh
-```
+AetherOS is **not a Linux kernel or operating system written from scratch**. Instead, it builds on Fedora's existing kernel, RPM packages, drivers, system services and infrastructure, and adds an AetherOS-specific layer containing desktop configuration, system services, graphical applications, automation, branding and distribution tooling.
 
-Output ISO lands in `build/out/AetherOS.iso`. Boot it in a VM (QEMU/VirtualBox)
-or `dd` it to a USB stick to test on real hardware.
-
-## What's in this milestone
-
-- Btrfs root/home subvolumes, GRUB2 EFI boot
-- Hyprland + Waybar + SDDM + PipeWire desktop stack
-- All three GPU driver stacks installed (correct one binds to your hardware)
-- Dev toolchain: git, neovim, VS Code, Node, Python, Rust, Go, Java, GCC/Clang, Docker
-- Firefox, LibreOffice, VLC, Steam, OBS, GIMP
-- SELinux enforcing, firewalld enabled
-- `/etc/os-release` branded as AetherOS
-
-## Honest scope notes
-
-Things like a custom AI assistant, theme/extension stores, a graphical
-installer UI, and custom Plymouth boot animations are real, buildable
-features — but each is its own software project (a systemd service + app,
-a web-based Anaconda screen, a Plymouth theme package) layered on top of this
-base, not something that ships from a single kickstart. Once this ISO boots
-cleanly, the next milestones would be:
-
-1. Test-boot the ISO in a VM, fix any package/dependency conflicts
-2. Custom Plymouth boot theme + GRUB theme (branding/)
-3. Anaconda installer customization (or keep Fedora's stock installer)
-4. AI assistant as a systemd user service + terminal integration
-5. RPM packaging for the AetherOS-specific bits, then CI via GitHub Actions
-
-Say which of these you want to tackle next and I'll build it out.
+```text
+┌──────────────────────────────────────────────────────────────┐
+│                         AetherOS UX                           │
+│                                                              │
+│ Settings • Software Center • Driver Manager • Security       │
+│ Snapshots • VPN • AI Assistant • Power • System Tools        │
+└──────────────────────────────┬───────────────────────────────┘
+                               │
+┌──────────────────────────────▼───────────────────────────────┐
+│                     AetherOS System Layer                     │
+│                                                              │
+│ Aether Services • CLI • systemd • Polkit • Update Engine     │
+│ Battery • Firewall • VPN • Snapshots • Telemetry • Drivers   │
+└──────────────────────────────┬───────────────────────────────┘
+                               │
+┌──────────────────────────────▼───────────────────────────────┐
+│                       Desktop Layer                           │
+│                                                              │
+│ Hyprland • Wayland • Waybar • GNOME • GDM/SDDM • PipeWire    │
+│ GTK • Portals • Kitty • Rofi/Wofi • Notifications             │
+└──────────────────────────────┬───────────────────────────────┘
+                               │
+┌──────────────────────────────▼───────────────────────────────┐
+│                      Linux System Layer                       │
+│                                                              │
+│ Linux Kernel • systemd • DNF • RPM • NetworkManager           │
+│ Mesa • udev • Polkit • SELinux • firewalld • PipeWire         │
+└──────────────────────────────┬───────────────────────────────┘
+                               │
+┌──────────────────────────────▼───────────────────────────────┐
+│                        Fedora Base                            │
+│                                                              │
+│ Fedora repositories • Fedora packages • Fedora kernel         │
+└──────────────────────────────────────────────────────────────┘
