@@ -1,9 +1,9 @@
 /* AetherOS Files — JS Engine
-   Talks to the Python backend at http://localhost:5998
+   Talks to the Python backend served from the same origin as this page
    Falls back to demo data when offline (browser preview)
 */
 
-const API = 'http://localhost:5998/api';
+const API = '/api';
 
 // ── State ──────────────────────────────────────────────────────────
 let currentPath   = '~';
